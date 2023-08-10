@@ -1,3 +1,6 @@
+import 'regenerator-runtime/runtime';
+import 'core-js/stable';
+
 const recipeContainer = document.querySelector('.recipe');
 
 const timeout = function (s) {
