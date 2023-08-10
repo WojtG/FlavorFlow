@@ -1,0 +1,23 @@
+{
+  "name": "flaworflow",
+  "version": "1.0.0",
+  "description": "Recipe application ",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WojtG/FlaworFlow.git"
+  },
+  "author": "Wojciech",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WojtG/FlaworFlow/issues"
+  },
+  "homepage": "https://github.com/WojtG/FlaworFlow#readme",
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.9.3",
+    "parcel": "^2.9.3"
+  }
+}
