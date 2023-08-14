@@ -719,7 +719,6 @@ const showRecipe = async function() {
     }
 };
 showRecipe();
-const chuj = document.querySelector(".search-results");
 
 },{"core-js/modules/web.immediate.js":"49tUX","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","url:../img/icons.svg":"loVOp"}],"49tUX":[function(require,module,exports) {
 "use strict";

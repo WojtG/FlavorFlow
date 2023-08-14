@@ -165,5 +165,3 @@ const showRecipe = async function () {
 };
 
 showRecipe();
-
-const chuj = document.querySelector('.search-results');
