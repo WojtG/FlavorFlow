@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime';
 import 'core-js/stable';
-import icons from 'url:../img/icons.svg'; //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
+import icons from 'url:../img/icons.svg';
 
 const recipeContainer = document.querySelector('.recipe');
 
@@ -23,17 +23,19 @@ const rednerSpinner = function (parentEl) {
 `;
   parentEl.innerHTML = '';
   parentEl.insertAdjacentHTML('afterbegin', markup);
-  //bedzie dzialalo jak spinner dzieki animacji w css
 };
 
 const showRecipe = async function () {
   try {
-    //loading recipe
+    const id = window.location.hash.slice(1);
 
+    if (!id) return;
+
+    //loading recipe
     rednerSpinner(recipeContainer);
 
     const response = await fetch(
-      'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604591c37cdc054bc886'
+      `https://forkify-api.herokuapp.com/api/v2/recipes/${id}`
     );
     const data = await response.json();
 
@@ -55,8 +57,6 @@ const showRecipe = async function () {
     };
 
     // rendering the recipe
-
-    //przy tworzeniu nowych elementow trzeba pamietac o tym ze po uzyciu parcela, tworzy sie nowy folder dist i to jest folder ktory bedzie wyswietlany w przegladrce, parcel tam zmienia roniwez nazwy itp przez to jak tworzymy za pomocą kodu nowe elementy na stronie i chcemy wrzucic jakies zdj ktore są w naszym folderze img to nie mozemy uzyc normalnego hrefa do nich bo tegn href nie bedzie znaleziony w folderze dist bo parcel zmienia nazwy, przez to trzeba href ustawic na folder w parcelu odpowiadajacy naszemu folderowi img. Zeby to zrobic najlepiej sobie zaimportowac tutaj ten nasz folder orginalny, bo to co my tu piszemy to sie wykonuje w folderze dist, w ktorym sa inne nazwy i ten normlany href by tam nie odnalazl sie.(importowanie na gorze kodu)
 
     const markup = `
       <figure class="recipe__fig">
@@ -118,7 +118,6 @@ const showRecipe = async function () {
       <ul class="recipe__ingredient-list">
       ${recipe.ingredients
         .map(ing => {
-          // nie moizemy uzywac forEach tu bo nie damy rady dodac tego elementu do czegos co jeszcze nie istenije na stronie. Musimy uzyc czegos co nam zreturnuje za kazdym razem stringa z HTML , wiec wezmiemy zmapujemy te skladniki w taki sposob ze w nowej array zamkna sie elementy htmlowskie opisujace kazdy skladnik, i pozniej łaczymy je za pomoca join("") i wtedy to zadziala tak samo jakbysmy dla kazdego skladnika recznie napisali takiego html template
           return `
           <li class="recipe__ingredient">
           <svg class="recipe__icon">
@@ -164,4 +163,4 @@ const showRecipe = async function () {
   }
 };
 
-showRecipe();
+['hashchange', 'load'].forEach(ev => window.addEventListener(ev, showRecipe));
