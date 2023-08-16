@@ -574,6 +574,7 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"aenu9":[function(require,module,exports) {
+//Controller łączy funckje, metody zmienne z view i z modelu. do view i modelu nie importujemy zadnych rzeczy z kontrolera ani do view/modelu nie importujemy nic z modelu/view
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _webImmediateJs = require("core-js/modules/web.immediate.js");
 var _modelJs = require("./model.js");
@@ -592,7 +593,7 @@ const controlRecipies = async function() {
         //2) rendering the recipe
         (0, _recipeViewJsDefault.default).redner(_modelJs.state.recipe); //na obiekcie stworzonym w view recipeView na podstauwe klasy  recipeView wowlujmy metode render ktora jest public api, ktora uruchomi zapisze nam dane z kroku 1 w property i ta protperty bedzie wykorzystana w prywantej metodzie #generateMarkup ktora odpowieddzialna jesy za stworzenie htmla, a nastepnie render method wyrenderuje
     } catch (error) {
-        console.log(error.message);
+        (0, _recipeViewJsDefault.default).renderError(); //dzieki throw err w modelu w loadRecipe, to jak wystapi tam blad w funckji to zretunruje sie promise z wartoscia tego errora i dzieki throw error w catrchu bedziemy mogli go tu obsluzyc, juz w linicje 21 awaitowalismy wynik tej async funkcji loadRecipe i jak tam bedzie error to on zejdzie tutaj do catcha. Ale nie chcemy nic z tego errora wyciagac tylko w view sobie error mesage piszemy w stringu i podajemy jako deafult value do funkcji.
     }
 };
 //W MVC event powinien byc sluchany w view natomiast kod jaki sie ma wykonac dla tego eventu powinien byc w controlerze. Dlatego nalezy zastosowac PUBLISHER-SUBSCRIBER pattern (pattern do oblusgi eventlistenerow w MVC architekturze).Tworzymy w view metode na naszym obiekcie  ktora bedzie tworzyla eventListenera (musi byc w public API) i jako callback funckje dajemy argument handler. Nastepnie w controlerze tworzymy funkcje init ktora zadziala przy starcie strony i w niej wywolujemy tą metode  addHandlerRender() na tym obieckie zaimportowanym z recipeView dla ktorego stworzylismy tą metode, i podajemy do niej  odpowiedni handler z controlera przez co stworzy sie dzialajacy event listener ktorego logika bedzie w controlorze a sluchanie na event w view
@@ -2020,11 +2021,11 @@ const loadRecipe = async function(id) {
             ingredients: recipe.ingredients
         }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
     } catch (err) {
-        console.log(err, "XYZ");
+        throw err; //throwujemy go zeby jak wystrapi tu blad to zeby loadRecipe zworcilo rejected promisa ktorego wartosc to bedzie ten error, i zebysmyh mogli uzyc tego w controlerze.
     }
 }; //buisness logic i pobranie danych mają tez byc  w modelu. Controller przy wywolywaniu tej funckji poda id jako argument. Ta fucnkja nic nie returnuje tylko zmienia nasz state object w kotrym bedzie zapisany przepis i ten state object bedzie uzyty przed controleler zeby wziac recipe. Zadzial dlatego ze export i import nie dzialaja na kopiach tylko na jednej zmiuennej, wiec jak tu sie nadpisze state to w controloerze gdziue importujemy tez sie nadpisze state
 
-},{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./helpers":"hGI1E"}],"dXNgZ":[function(require,module,exports) {
+},{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -2675,7 +2676,7 @@ const getJSON = async function(url) {
     }
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config":"k5Hzs","regenerator-runtime":"dXNgZ"}],"l60JC":[function(require,module,exports) {
+},{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l60JC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _iconsSvg = require("url:../../img/icons.svg"); //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
@@ -2684,6 +2685,8 @@ var _fractional = require("fractional");
 class RecipeView {
     #parentElement = document.querySelector(".recipe");
     #data;
+    #errorMessage = "We could not find that recipe. Please try another one!";
+    #message = "";
     redner(data) {
         this.#data = data; //w tej metodzie stowrzymy #data ktore bedzie trzymalo dane o przepisie, i teraz ten przepis bedzie dostyepny pod tą property data wiec mozemy go wykorzystywac w innych metodach np  w #generateMarkup ktora stworzy nam htmla
         const markup = this.#generateMarkup();
@@ -2701,7 +2704,37 @@ class RecipeView {
       </svg>
     </div> 
   `;
-        this.#parentElement.innerHTML = "";
+        this.#clear();
+        this.#parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    //renderowanie bledow zawsze musi sie dziac na ekranie UI zeby widzial je uzytkowanik wiec wysiwtelanie i generowanie bledu powinno byc w view zawsze. teraz tą metode sie wezmie i jako ze jest public API to uzyje sie ją w controloerze do handlowania bledów
+    renderError(message1 = this.#errorMessage) {
+        const markup = `
+    <div class="error">
+      <div>
+        <svg>
+          <use href="${(0, _iconsSvgDefault.default)}#icon-alert-triangle"></use>
+        </svg>
+      </div>
+      <p>${message1}</p>
+    </div>
+`;
+        this.#clear();
+        this.#parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    renderMessage(msg = this.#message) {
+        //renderuje wiadomosc pozytywna
+        const markup = `
+    <div class="message">
+      <div>
+        <svg>
+          <use href="${(0, _iconsSvgDefault.default)}#icon-smile"></use>
+        </svg>
+      </div>
+      <p>${message}</p>
+    </div>
+`;
+        this.#clear();
         this.#parentElement.insertAdjacentHTML("afterbegin", markup);
     }
     addHandlerRender(handler) {

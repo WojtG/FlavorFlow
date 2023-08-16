@@ -4,6 +4,8 @@ import { Fraction } from 'fractional';
 class RecipeView {
   #parentElement = document.querySelector('.recipe');
   #data;
+  #errorMessage = 'We could not find that recipe. Please try another one!';
+  #message = '';
 
   redner(data) {
     this.#data = data; //w tej metodzie stowrzymy #data ktore bedzie trzymalo dane o przepisie, i teraz ten przepis bedzie dostyepny pod tą property data wiec mozemy go wykorzystywac w innych metodach np  w #generateMarkup ktora stworzy nam htmla
@@ -24,7 +26,39 @@ class RecipeView {
       </svg>
     </div> 
   `;
-    this.#parentElement.innerHTML = '';
+    this.#clear();
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  //renderowanie bledow zawsze musi sie dziac na ekranie UI zeby widzial je uzytkowanik wiec wysiwtelanie i generowanie bledu powinno byc w view zawsze. teraz tą metode sie wezmie i jako ze jest public API to uzyje sie ją w controloerze do handlowania bledów
+  renderError(message = this.#errorMessage) {
+    const markup = `
+    <div class="error">
+      <div>
+        <svg>
+          <use href="${icons}#icon-alert-triangle"></use>
+        </svg>
+      </div>
+      <p>${message}</p>
+    </div>
+`;
+    this.#clear();
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderMessage(msg = this.#message) {
+    //renderuje wiadomosc pozytywna
+    const markup = `
+    <div class="message">
+      <div>
+        <svg>
+          <use href="${icons}#icon-smile"></use>
+        </svg>
+      </div>
+      <p>${message}</p>
+    </div>
+`;
+    this.#clear();
     this.#parentElement.insertAdjacentHTML('afterbegin', markup);
   }
 

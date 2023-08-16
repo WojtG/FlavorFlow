@@ -1,3 +1,4 @@
+//Controller łączy funckje, metody zmienne z view i z modelu. do view i modelu nie importujemy zadnych rzeczy z kontrolera ani do view/modelu nie importujemy nic z modelu/view
 import * as model from './model.js';
 import recipeView from './views/recipeView.js'; //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
 import 'regenerator-runtime/runtime';
@@ -22,7 +23,7 @@ const controlRecipies = async function () {
     //2) rendering the recipe
     recipeView.redner(model.state.recipe); //na obiekcie stworzonym w view recipeView na podstauwe klasy  recipeView wowlujmy metode render ktora jest public api, ktora uruchomi zapisze nam dane z kroku 1 w property i ta protperty bedzie wykorzystana w prywantej metodzie #generateMarkup ktora odpowieddzialna jesy za stworzenie htmla, a nastepnie render method wyrenderuje
   } catch (error) {
-    console.log(error.message);
+    recipeView.renderError(); //dzieki throw err w modelu w loadRecipe, to jak wystapi tam blad w funckji to zretunruje sie promise z wartoscia tego errora i dzieki throw error w catrchu bedziemy mogli go tu obsluzyc, juz w linicje 21 awaitowalismy wynik tej async funkcji loadRecipe i jak tam bedzie error to on zejdzie tutaj do catcha. Ale nie chcemy nic z tego errora wyciagac tylko w view sobie error mesage piszemy w stringu i podajemy jako deafult value do funkcji.
   }
 };
 
