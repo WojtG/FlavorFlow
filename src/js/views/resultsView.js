@@ -8,7 +8,6 @@ class resulsView extends View {
   _message = '';
 
   _generateMarkup() {
-    console.log(this._data);
     return this._data.map(rec => this._generateMarkupPreview(rec)).join('');
   } //ta metoda mimo ze sie tak samo nazywa jak w recipeView to bedzie inny html generowala w obydwu view wiec nie moze byc jednej metody dla obydwu klas w klasie rodzicu.
 

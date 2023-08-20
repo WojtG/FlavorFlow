@@ -584,6 +584,8 @@ var _searchViewJs = require("./views/searchView.js");
 var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 var _resultsViewJs = require("./views/resultsView.js");
 var _resultsViewJsDefault = parcelHelpers.interopDefault(_resultsViewJs);
+var _paginationViewJs = require("./views/paginationView.js");
+var _paginationViewJsDefault = parcelHelpers.interopDefault(_paginationViewJs);
 var _runtime = require("regenerator-runtime/runtime");
 // if (module.hot) {
 //   module.hot.accept();
@@ -612,18 +614,28 @@ const controlSearchResults = async function() {
         // 2) Load search query
         await _modelJs.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
         // 3) Render results
-        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage());
+        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(1));
+        // 4) Render pagination btns
+        (0, _paginationViewJsDefault.default).render(_modelJs.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
     } catch (err) {
         console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
     }
 };
+const controlPagination = function(goToPage) {
+    //goToPage to numer strony z domu do ktorej mamy isc po klikneciu btna
+    // 1) Render new results
+    (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(goToPage)); //renderuja sie nowe resulty wzgledem goToPage, tamte sie usuwaja bo render ma w srodku siebie metode clear() ktora usuwa htmla z rodzica przed dodaniem nowytch wyniukow. paginationView.render(model.state.search zostaje takie samo bo getSearchResultsPage(goToPage) nadpiduje dane w model.state.search.page odnosnie numeru strony
+    // 2) Render new pagination btns
+    (0, _paginationViewJsDefault.default).render(_modelJs.state.search);
+};
 const init = function() {
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
     (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
+    (0, _paginationViewJsDefault.default).addHandlerClick(controlPagination);
 };
 init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/paginationView.js":"6z7bi","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
 "use strict";
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("52e9b3eefbbce1ed");
@@ -3237,7 +3249,6 @@ class resulsView extends (0, _viewDefault.default) {
     _errorMessage = "No recipes found for your query! Please try again!";
     _message = "";
     _generateMarkup() {
-        console.log(this._data);
         return this._data.map((rec)=>this._generateMarkupPreview(rec)).join("");
     }
     _generateMarkupPreview(rec) {
@@ -3258,6 +3269,98 @@ class resulsView extends (0, _viewDefault.default) {
 }
 exports.default = new resulsView();
 
-},{"url:../../img/icons.svg":"loVOp","./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["aD7Zm","aenu9"], "aenu9", "parcelRequire0fb8")
+},{"url:../../img/icons.svg":"loVOp","./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"6z7bi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _view = require("./View");
+var _viewDefault = parcelHelpers.interopDefault(_view);
+var _iconsSvg = require("url:../../img/icons.svg");
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
+var _config = require("../config");
+class PaginationView extends (0, _viewDefault.default) {
+    _parentElement = document.querySelector(".pagination");
+    _currentPage;
+    _numPages;
+    addHandlerClick(handler) {
+        this._parentElement.addEventListener("click", function(e) {
+            const btnEl = e.target.closest(".btn--inline "); //stosujemy tu event delegation. Jakby byl sam btn to spoko nie trzeba closest uzywac wystaczy samo e.target ale jako ze sa rzeczy w btnie to musimy miec pewnosc ze jak klikniemy w dziecko  .btn--inline  to nam sie wybierze i tak btn wiec dlatego srosujemy closest
+            if (!btnEl) return; //sprawdzenie bo mozemy w naszym el,meencie rodzicu kliknac na cos co nie ma przodka o klasie btn--inline i wtedy btnEl jest null wiec to zabezpieczenie zeby nie wyhjebalo funckji oprzy odczytuwaniu dataset
+            const goToPage = +btnEl.dataset.goto;
+            handler(goToPage); //jak mamy jakies rzeczy zwiazne z eventem a wiec e.target e.preventDefault()  to musimy tutaj zrobic callbacka ktory obsluguje tylko rzeczy zwiazane z eventem (Jak musimy podac jakis element htmla jako argument handlera czy jakas wartosc z domu jako argument handlera to tez tak trzeba zrobic) i na koniec wywolac handler. cala logika handlera nie dotyczaca domu i eventow ma byc w kontrolerze. reszta tutaj. Dlatego numer strony pozskakny z dataSet z DOMU podajemy jako aergument handlera zeby mocv go uzyc w kontrolerze
+        });
+    }
+    _gereneteMarkupBtnNextPage() {
+        return `
+        <button data-goto="${this.currentPage + 1}" class="btn--inline pagination__btn--next"> 
+            <span>Page ${this.currentPage + 1}</span>
+            <svg class="search__icon">
+                <use href="${0, _iconsSvgDefault.default}#icon-arrow-right"></use>
+            </svg>
+        </button>
+    `;
+    //tworzymy  data-goto="${this.currentPage + 1}" zeby js wiedzial do kotrej strony ma przejsc po kliknieciu, zczyta se ten data atrybut z htmla
+    }
+    _gereneteMarkupBtnPreviousPage() {
+        return `
+        <button data-goto="${this.currentPage - 1}" class="btn--inline pagination__btn--prev">
+            <svg class="search__icon">
+                <use href="${0, _iconsSvgDefault.default}#icon-arrow-left"></use>
+            </svg>
+            <span>Page ${this.currentPage - 1}</span>
+        </button>
+      `;
+    }
+    _generateMarkup() {
+        //podailismy do render() dla tego view model.search.results w kotrym sa dane na temat na kotrej jestesmy stronie, ilosc wynuikow do wygenerowania itp, te dane zapisują się w zmiennej _data ktora jako pusta zmienna inhertiowana jest do kazdego view i render dla kazdegom view inne dane w niej zapisuje. Funckja ta bedzie renderowac buttno w zaleznosci od astrony na kotrej jestesmy
+        this._numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage); //obliczamy ile jest stron, tu wychodzi 5.9 wiec zawsze do gory sie zaokorgla zeby wszytskie wyniki sie zmiescily (dzielimy dlugoisc array z resultami) przez ilosc resultow jakie maja byc na stronie wtedy wiemy ile jest stron, to wsyztsko przyszlo jako argument z render() wywoalnym w kontrolerze i zapisane zostalo w _data. Wartosci te sa zdefiniowane w modelu
+        this.currentPage = this._data.page;
+        // Page 1, there are other pages
+        if (this.currentPage === 1 && this._numPages > 1) return this._gereneteMarkupBtnNextPage();
+        //sprawdzmy czy jestemy na pierwszej stronie i czy jest wiecej stron niz 1
+        //   return `
+        //     <button class="btn--inline pagination__btn--next">
+        //         <span>Page ${this.currentPage + 1}</span>
+        //         <svg class="search__icon">
+        //             <use href="${icons}#icon-arrow-right"></use>
+        //         </svg>
+        //     </button>
+        // `;
+        // Last page
+        if (this._numPages === this.currentPage && this.currentPage > 1) return this._gereneteMarkupBtnPreviousPage();
+        //sprawdzmy czy ostatnia strona ma taka sama wartosc jak strona akutalna i nie jest pierwszą(bo jakby byla jedna strona to wtedy to tez by byla prawda a musimy rozdzielic te przypadki), jesli tak to jestyesmy na ostatniej stronie
+        //   return `
+        //     <button class="btn--inline pagination__btn--prev">
+        //         <svg class="search__icon">
+        //             <use href="${icons}#icon-arrow-left"></use>
+        //         </svg>
+        //         <span>Page ${this.currentPage - 1}</span>
+        //     </button>
+        //   `;
+        //Other page
+        if (this._numPages > this.currentPage && this.currentPage > 1) return `
+    ${this._gereneteMarkupBtnPreviousPage()}  ${this._gereneteMarkupBtnNextPage()}
+  `;
+        //   return `
+        //         <button class="btn--inline pagination__btn--prev">
+        //             <svg class="search__icon">
+        //                 <use href="${icons}#icon-arrow-left"></use>
+        //             </svg>
+        //             <span>Page ${this.currentPage - 1}</span>
+        //         </button>
+        //         <button class="btn--inline pagination__btn--next">
+        //             <span>Page ${this.currentPage + 1}</span>
+        //             <svg class="search__icon">
+        //                 <use href="${icons}#icon-arrow-right"></use>
+        //             </svg>
+        //         </button>
+        //       `;
+        //sprawdzamy czy jestesmy na stronie innej niz ostatnia i pierwsza. Sprawqdzmy czy numer stron jest wiekszy niz akutralna strona i czy akutalna strona jest wieksza niz 1
+        // Page 1, no other pages
+        return ""; //jak wszytskie pozostale warunki nie sa spelnione to znaczy ze jest tylko jedna strona. Returnujemy nic bo nie chcemy zadnego btna w takiej sytuacji renderowac
+    }
+}
+exports.default = new PaginationView();
+
+},{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","../config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["aD7Zm","aenu9"], "aenu9", "parcelRequire0fb8")
 
 //# sourceMappingURL=index.e37f48ea.js.map

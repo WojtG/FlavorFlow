@@ -3,6 +3,7 @@ import * as model from './model.js';
 import recipeView from './views/recipeView.js'; //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
+import paginationView from './views/paginationView.js';
 import 'regenerator-runtime/runtime';
 import 'core-js/stable';
 
@@ -45,15 +46,29 @@ const controlSearchResults = async function () {
     await model.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
 
     // 3) Render results
-    resultsView.render(model.getSearchResultsPage());
+    resultsView.render(model.getSearchResultsPage(1));
+
+    // 4) Render pagination btns
+    paginationView.render(model.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
   } catch (err) {
     console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
   }
 };
 
+const controlPagination = function (goToPage) {
+  //goToPage to numer strony z domu do ktorej mamy isc po klikneciu btna
+
+  // 1) Render new results
+  resultsView.render(model.getSearchResultsPage(goToPage)); //renderuja sie nowe resulty wzgledem goToPage, tamte sie usuwaja bo render ma w srodku siebie metode clear() ktora usuwa htmla z rodzica przed dodaniem nowytch wyniukow. paginationView.render(model.state.search zostaje takie samo bo getSearchResultsPage(goToPage) nadpiduje dane w model.state.search.page odnosnie numeru strony
+
+  // 2) Render new pagination btns
+  paginationView.render(model.state.search);
+};
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
   searchView.addHandlerSearch(controlSearchResults);
+  paginationView.addHandlerClick(controlPagination);
 };
 
 init();
