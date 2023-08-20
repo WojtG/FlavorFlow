@@ -6,9 +6,9 @@ import resultsView from './views/resultsView.js';
 import 'regenerator-runtime/runtime';
 import 'core-js/stable';
 
-if (module.hot) {
-  module.hot.accept();
-}
+// if (module.hot) {
+//   module.hot.accept();
+// }
 //to 0d 9 do 11 linijki nie jest js tylko to jest stricte z parcela i to jak napiszemyu to jak zrobimy zmiany w kodzie to strona nasza sie zupdejtuje ale nie stracimy stejtu aplikajci bo nie odswiezy sie strona,wiec to przydatne do developingu jak chcemy zachowac stan aplikajci a na koniec robot to wyjebviemy
 
 const controlRecipies = async function () {
@@ -45,7 +45,7 @@ const controlSearchResults = async function () {
     await model.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
 
     // 3) Render results
-    resultsView.render(model.state.search.results);
+    resultsView.render(model.getSearchResultsPage());
   } catch (err) {
     console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
   }

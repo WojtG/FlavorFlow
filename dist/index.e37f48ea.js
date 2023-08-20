@@ -585,7 +585,9 @@ var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 var _resultsViewJs = require("./views/resultsView.js");
 var _resultsViewJsDefault = parcelHelpers.interopDefault(_resultsViewJs);
 var _runtime = require("regenerator-runtime/runtime");
-if (module.hot) module.hot.accept();
+// if (module.hot) {
+//   module.hot.accept();
+// }
 //to 0d 9 do 11 linijki nie jest js tylko to jest stricte z parcela i to jak napiszemyu to jak zrobimy zmiany w kodzie to strona nasza sie zupdejtuje ale nie stracimy stejtu aplikajci bo nie odswiezy sie strona,wiec to przydatne do developingu jak chcemy zachowac stan aplikajci a na koniec robot to wyjebviemy
 const controlRecipies = async function() {
     try {
@@ -610,7 +612,7 @@ const controlSearchResults = async function() {
         // 2) Load search query
         await _modelJs.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
         // 3) Render results
-        (0, _resultsViewJsDefault.default).render(_modelJs.state.search.results);
+        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage());
     } catch (err) {
         console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
     }
@@ -2017,6 +2019,7 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "state", ()=>state);
 parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe);
 parcelHelpers.export(exports, "loadSearchResults", ()=>loadSearchResults);
+parcelHelpers.export(exports, "getSearchResultsPage", ()=>getSearchResultsPage);
 var _regeneratorRuntime = require("regenerator-runtime");
 var _config = require("./config");
 var _helpers = require("./helpers");
@@ -2025,7 +2028,9 @@ const state = {
     recipe: {},
     search: {
         query: "",
-        results: []
+        results: [],
+        page: 1,
+        resultsPerPage: (0, _config.RES_PER_PAGE)
     }
 };
 const loadRecipe = async function(id) {
@@ -2066,6 +2071,13 @@ const loadSearchResults = async function(query) {
         throw err;
     }
 };
+const getSearchResultsPage = function(page = state.search.page) {
+    //defaultowa wartosc page to 1 i zapisana jest w stejcie, jak nie damy zadnego argumentu to sie przjmie 1 jako page
+    state.search.page = page; //storujemy w stejcie aplikacji na ktorej stronie aktualnie jestesmy
+    const start = (page - 1) * state.search.resultsPerPage; //tak bieerzemy pierwsza wartosc (page -1) * ilosc wyniukow ktore chcemy miec na jednej stronie, page zaczyna sie od 1 wiec na pierwszej staonie start zacznie generowac od 0 wyrazu w array na drugiej streoanie jak page bedzie 2 to od 10 wyrazu w array i tak dalej
+    const end = page * state.search.resultsPerPage; //tak koncowy wyraz page * ilosc wyniukow ktore chcemy miec na jednej stronie. dla strony 1 to 10 dla drugiej 20 i tak dalerj
+    return state.search.results.slice(start, end); //slice robi nam wycinek array, tak jak na stringach dziala, od indexu start do indexu end ale end nie wchopdzi w sklad nowej array
+}; //nie jest async bo search resulty sa juz zaladowane w tym punkcie gdy bedzimey wywolywac tą fucnkje, nie sa jedynie wyrenederowane.bedziemy po prostu w tej funckji wyciagac z tablicy state.search.results okresloną liczbe wynikow dla kazdej strony i pozniej wkladac ten wycinek do controlera gdzie rendeorwalismy wyniki
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
@@ -2657,8 +2669,10 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "API_URL", ()=>API_URL);
 parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC);
+parcelHelpers.export(exports, "RES_PER_PAGE", ()=>RES_PER_PAGE);
 const API_URL = "https://forkify-api.herokuapp.com/api/v2/recipes/";
 const TIMEOUT_SEC = 10;
+const RES_PER_PAGE = 10;
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
 exports.interopDefault = function(a) {

@@ -2,5 +2,5 @@
 
 export const API_URL = 'https://forkify-api.herokuapp.com/api/v2/recipes/';
 //tutaj dajemy tylkjo zmienne const ktore naprawde nigdy nie zmienia swojej wartosci i zawsz beda mialy ta wartosc i sa wazne jesli chodzi o dzialanie aplikacji, onzwaczyamy je nie camelCase tylko DUZYMI_LITERMAI
-
 export const TIMEOUT_SEC = 10;
+export const RES_PER_PAGE = 10;
