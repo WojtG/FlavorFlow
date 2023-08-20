@@ -3279,8 +3279,6 @@ var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 var _config = require("../config");
 class PaginationView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".pagination");
-    _currentPage;
-    _numPages;
     addHandlerClick(handler) {
         this._parentElement.addEventListener("click", function(e) {
             const btnEl = e.target.closest(".btn--inline "); //stosujemy tu event delegation. Jakby byl sam btn to spoko nie trzeba closest uzywac wystaczy samo e.target ale jako ze sa rzeczy w btnie to musimy miec pewnosc ze jak klikniemy w dziecko  .btn--inline  to nam sie wybierze i tak btn wiec dlatego srosujemy closest
@@ -3289,66 +3287,66 @@ class PaginationView extends (0, _viewDefault.default) {
             handler(goToPage); //jak mamy jakies rzeczy zwiazne z eventem a wiec e.target e.preventDefault()  to musimy tutaj zrobic callbacka ktory obsluguje tylko rzeczy zwiazane z eventem (Jak musimy podac jakis element htmla jako argument handlera czy jakas wartosc z domu jako argument handlera to tez tak trzeba zrobic) i na koniec wywolac handler. cala logika handlera nie dotyczaca domu i eventow ma byc w kontrolerze. reszta tutaj. Dlatego numer strony pozskakny z dataSet z DOMU podajemy jako aergument handlera zeby mocv go uzyc w kontrolerze
         });
     }
-    _gereneteMarkupBtnNextPage() {
+    _gereneteMarkupBtnNextPage(currentPage) {
         return `
-        <button data-goto="${this.currentPage + 1}" class="btn--inline pagination__btn--next"> 
-            <span>Page ${this.currentPage + 1}</span>
+        <button data-goto="${currentPage + 1}" class="btn--inline pagination__btn--next"> 
+            <span>Page ${currentPage + 1}</span>
             <svg class="search__icon">
                 <use href="${0, _iconsSvgDefault.default}#icon-arrow-right"></use>
             </svg>
         </button>
     `;
-    //tworzymy  data-goto="${this.currentPage + 1}" zeby js wiedzial do kotrej strony ma przejsc po kliknieciu, zczyta se ten data atrybut z htmla
+    //tworzymy  data-goto="${currentPage + 1}" zeby js wiedzial do kotrej strony ma przejsc po kliknieciu, zczyta se ten data atrybut z htmla
     }
-    _gereneteMarkupBtnPreviousPage() {
+    _gereneteMarkupBtnPreviousPage(currentPage) {
         return `
-        <button data-goto="${this.currentPage - 1}" class="btn--inline pagination__btn--prev">
+        <button data-goto="${currentPage - 1}" class="btn--inline pagination__btn--prev">
             <svg class="search__icon">
                 <use href="${0, _iconsSvgDefault.default}#icon-arrow-left"></use>
             </svg>
-            <span>Page ${this.currentPage - 1}</span>
+            <span>Page ${currentPage - 1}</span>
         </button>
       `;
     }
     _generateMarkup() {
         //podailismy do render() dla tego view model.search.results w kotrym sa dane na temat na kotrej jestesmy stronie, ilosc wynuikow do wygenerowania itp, te dane zapisują się w zmiennej _data ktora jako pusta zmienna inhertiowana jest do kazdego view i render dla kazdegom view inne dane w niej zapisuje. Funckja ta bedzie renderowac buttno w zaleznosci od astrony na kotrej jestesmy
-        this._numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage); //obliczamy ile jest stron, tu wychodzi 5.9 wiec zawsze do gory sie zaokorgla zeby wszytskie wyniki sie zmiescily (dzielimy dlugoisc array z resultami) przez ilosc resultow jakie maja byc na stronie wtedy wiemy ile jest stron, to wsyztsko przyszlo jako argument z render() wywoalnym w kontrolerze i zapisane zostalo w _data. Wartosci te sa zdefiniowane w modelu
-        this.currentPage = this._data.page;
+        const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage); //obliczamy ile jest stron, tu wychodzi 5.9 wiec zawsze do gory sie zaokorgla zeby wszytskie wyniki sie zmiescily (dzielimy dlugoisc array z resultami) przez ilosc resultow jakie maja byc na stronie wtedy wiemy ile jest stron, to wsyztsko przyszlo jako argument z render() wywoalnym w kontrolerze i zapisane zostalo w _data. Wartosci te sa zdefiniowane w modelu
+        const currentPage = this._data.page;
         // Page 1, there are other pages
-        if (this.currentPage === 1 && this._numPages > 1) return this._gereneteMarkupBtnNextPage();
+        if (currentPage === 1 && numPages > 1) return this._gereneteMarkupBtnNextPage(currentPage);
         //sprawdzmy czy jestemy na pierwszej stronie i czy jest wiecej stron niz 1
         //   return `
         //     <button class="btn--inline pagination__btn--next">
-        //         <span>Page ${this.currentPage + 1}</span>
+        //         <span>Page ${currentPage + 1}</span>
         //         <svg class="search__icon">
         //             <use href="${icons}#icon-arrow-right"></use>
         //         </svg>
         //     </button>
         // `;
         // Last page
-        if (this._numPages === this.currentPage && this.currentPage > 1) return this._gereneteMarkupBtnPreviousPage();
+        if (numPages === currentPage && currentPage > 1) return this._gereneteMarkupBtnPreviousPage(currentPage);
         //sprawdzmy czy ostatnia strona ma taka sama wartosc jak strona akutalna i nie jest pierwszą(bo jakby byla jedna strona to wtedy to tez by byla prawda a musimy rozdzielic te przypadki), jesli tak to jestyesmy na ostatniej stronie
         //   return `
         //     <button class="btn--inline pagination__btn--prev">
         //         <svg class="search__icon">
         //             <use href="${icons}#icon-arrow-left"></use>
         //         </svg>
-        //         <span>Page ${this.currentPage - 1}</span>
+        //         <span>Page ${currentPage - 1}</span>
         //     </button>
         //   `;
         //Other page
-        if (this._numPages > this.currentPage && this.currentPage > 1) return `
-    ${this._gereneteMarkupBtnPreviousPage()}  ${this._gereneteMarkupBtnNextPage()}
+        if (numPages > currentPage && currentPage > 1) return `
+    ${this._gereneteMarkupBtnPreviousPage(currentPage)}  ${this._gereneteMarkupBtnNextPage(currentPage)}
   `;
         //   return `
         //         <button class="btn--inline pagination__btn--prev">
         //             <svg class="search__icon">
         //                 <use href="${icons}#icon-arrow-left"></use>
         //             </svg>
-        //             <span>Page ${this.currentPage - 1}</span>
+        //             <span>Page ${currentPage - 1}</span>
         //         </button>
         //         <button class="btn--inline pagination__btn--next">
-        //             <span>Page ${this.currentPage + 1}</span>
+        //             <span>Page ${currentPage + 1}</span>
         //             <svg class="search__icon">
         //                 <use href="${icons}#icon-arrow-right"></use>
         //             </svg>
