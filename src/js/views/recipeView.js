@@ -8,6 +8,17 @@ class RecipeView extends View {
   _errorMessage = 'We could not find that recipe. Please try another one!';
   _message = '';
 
+  addHandlerUpdateServings(handler) {
+    this._parentElement.addEventListener('click', function (e) {
+      const btn = e.target.closest('.btn--update-servings');
+      if (!btn) return;
+      const updateTo = +btn.dataset.updateTo; //dzieki temu ze dwa rozne dataSety zdefiuniowac dla tych btnow to w zaleznosci ktory kliniemy to pobierze innego dataSeta i poda go do handlera jako argumnet przez co wywolamy go w kontrolerze z tym argumentem i w ten spoosb bedzie wiadomo ile mamy servings. Nie mozmey  tu uzyc desctrutingu bo jest +, mozna trylko czyustą wartosc bez zmieniania jej w tej samej linijce desctructowac
+      // console.log(this._data); tutaj nie jest dostepne bo this w event listernerze to pointuje na obiekt na kotrym wywoalismy event a nie na obiekt stworozny na podsytawie klasy tak jak to jest w klasach. Jak chciualbys zeby tu bylo to dostepne to musialby ten  addHandlerUpdateServings byc arrow funckja bo ona nie ma wlasnego this, i pobiera je z otoczenia. Ale jak tu pobierzesz to bedziesz pozniej musial rozdzielac na obydwa przypadki jak klikniesz jeden vbtn zrob jedno a jak drugi to druigie, lepiej dodac do tych btnow przy rendertowaniu dataSet(zawsze dodawaj dataSet jak chcesz polaczyc DOM z kodem, czyli pobrac jakies informacje ktore sie dzieją w domie dla okreslonych elementow HTML i pozniej cos z nimi zrobic w kodzie)
+
+      if (updateTo > 0) handler(updateTo);
+    });
+  }
+
   addHandlerRender(handler) {
     //tj publisher i musi dostac dostep do subscribera zeby sie mogl wykonac event, ale nie woilno nam imoprtowac niz z kontrolera do view, wiec tworzymy funckje ktora jako argument przyjmie event handlera
 
@@ -23,7 +34,7 @@ class RecipeView extends View {
   }
 
   _generateMarkup() {
-    //przy tworzeniu nowych elementow trzeba pamietac o tym ze po uzyciu parcela, tworzy sie nowy folder dist i to jest folder ktory bedzie wyswietlany w przegladrce, parcel tam zmienia roniwez nazwy itp przez to jak tworzymy za pomocą kodu nowe elementy na stronie i chcemy wrzucic jakies zdj ktore są w naszym folderze img to nie mozemy uzyc normalnego hrefa do nich bo tegn href nie bedzie znaleziony w folderze dist bo parcel zmienia nazwy, przez to trzeba href ustawic na folder w parcelu odpowiadajacy naszemu folderowi img. Zeby to zrobic najlepiej sobie zaimportowac tutaj ten nasz folder orginalny, bo to co my tu piszemy to sie wykonuje w folderze dist, w ktorym sa inne nazwy i ten normlany href by tam nie odnalazl sie.(importowanie na gorze kodu)
+    //przy tworzeniu nowych elementow trzeba pamietac o tym ze po uzyciu parcela, tworzy sie nowy folder dist i to jest folder ktory bedzie wyswietlany w przegladrce, parcel tam zmienia roniwez nazwy itp przez to jak tworzymy za pomocą kodu nowe elementy na stronie i chcemy wrzucic jakies zdj ktore są w naszym folderze img to nie mozemy uzyc normalnego hrefa do nich bo tegn href nie bedzie znaleziony w folderze dist bo parcel zmienia nazwy, przez to trzeba href ustawic na folder w parcelu odpowiadajacy naszemu folderowi img. Zeby to zrobic najlepiej sobie zaimportowac tutaj ten nasz folder orginalny, bo to co my tu piszemy to sie wykonuje w folderze dist, w ktorym sa inne nazwy i ten normlany href by tam nie odnalazl sie.(importowanie na gorze kodu). W  <div class="recipe__info-buttons"> tworzymy dataSety dla btnow w kotrych zapisujemy liczbe servings-1 i liczbe servings + 1 zeby pozniej ich uzyc zeby polaczyc dom z kodem z kontrolera
 
     return `
       <figure class="recipe__fig">
@@ -55,12 +66,16 @@ class RecipeView extends View {
         <span class="recipe__info-text">servings</span>
 
         <div class="recipe__info-buttons">
-          <button class="btn--tiny btn--increase-servings">
+          <button data-update-to ="${
+            this._data.servings - 1
+          }" class="btn--tiny btn--update-servings">
             <svg>
               <use href="${icons}#icon-minus-circle"></use>
             </svg>
           </button>
-          <button class="btn--tiny btn--increase-servings">
+          <button  data-update-to ="${
+            this._data.servings + 1
+          }" class="btn--tiny btn--update-servings">
             <svg>
               <use href="${icons}#icon-plus-circle"></use>
             </svg>

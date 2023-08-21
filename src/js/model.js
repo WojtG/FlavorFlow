@@ -64,3 +64,27 @@ export const getSearchResultsPage = function (page = state.search.page) {
   const end = page * state.search.resultsPerPage; //tak koncowy wyraz page * ilosc wyniukow ktore chcemy miec na jednej stronie. dla strony 1 to 10 dla drugiej 20 i tak dalerj
   return state.search.results.slice(start, end); //slice robi nam wycinek array, tak jak na stringach dziala, od indexu start do indexu end ale end nie wchopdzi w sklad nowej array
 }; //nie jest async bo search resulty sa juz zaladowane w tym punkcie gdy bedzimey wywolywac tą fucnkje, nie sa jedynie wyrenederowane.bedziemy po prostu w tej funckji wyciagac z tablicy state.search.results okresloną liczbe wynikow dla kazdej strony i pozniej wkladac ten wycinek do controlera gdzie rendeorwalismy wyniki
+
+export const updateServings = function (newServings) {
+  // console.log(state.recipe.ingredients);
+
+  // state.recipe.ingredients = state.recipe.ingredients.map(ing => {
+  //   return {
+  //     quantity:
+  //       ing.quantity !== null ? newServings * ing.quantity : ing.quantity,
+  //     unit: ing.unit,
+  //     description: ing.description,
+  //   };
+  // });
+
+  //mozna w ten sposob za pomoca map a wiec stworzyc nową state.recipe.ingredients albo zmutowac tą jedna property quantity za pomocą forEach
+
+  state.recipe.ingredients.forEach(ing => {
+    ing.quantity = (ing.quantity * newServings) / state.recipe.servings;
+
+    //nowaIloscSkladnikow = staraIloscSkadników * nowa ilosc porcji/ stara ilosc porcji
+    //przyklad nowaIloscSkladnikow = 2 *8/4 =4 powoila sie ilosc porcji wiec podwoji sie ilosc skladnikow.
+  });
+
+  state.recipe.servings = newServings;
+};

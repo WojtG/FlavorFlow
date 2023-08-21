@@ -65,8 +65,17 @@ const controlPagination = function (goToPage) {
   paginationView.render(model.state.search);
 };
 
+const controlServings = function (newServings) {
+  //newSerwings to liczba serwings ktora przyjdzie z domu i zeby ją tu podac to wywoamy tam handlera z arguemntem ktory bedzie odpowiadal wlasnie liczbe nowych serwings / tak samo stosowalismy w controlPagination przy podawaniu goToPage
+  // 1) update recipe ingredients and servings
+  model.updateServings(newServings);
+  // 2) Redner the recipe view
+  recipeView.render(model.state.recipe); //rendderujemy jeszcze raz cael view zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
+};
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
+  recipeView.addHandlerUpdateServings(controlServings);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
 };
