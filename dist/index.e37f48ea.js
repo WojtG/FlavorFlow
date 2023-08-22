@@ -618,7 +618,7 @@ const controlSearchResults = async function() {
         // 4) Render pagination btns
         (0, _paginationViewJsDefault.default).render(_modelJs.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
     } catch (err) {
-        console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
+        (0, _resultsViewJsDefault.default).renderError(); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac, dlatrego tu go jednak handlowalem
     }
 };
 const controlPagination = function(goToPage) {
@@ -633,7 +633,8 @@ const controlServings = function(newServings) {
     // 1) update recipe ingredients and servings
     _modelJs.updateServings(newServings);
     // 2) Redner the recipe view
-    (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe); //rendderujemy jeszcze raz cael view zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
+    // recipeView.render(model.state.recipe); //rendderujemy jeszcze raz caly view przepisu zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
+    (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe); //to bedzie updejtowalo tylko text i atrybuty w DOM a nie ze bedzie cale wysiwetlanie przpeisu jeszcze raz sie bedzie musialo zrobic tak jak w tym wczesnijeszym sposobie
 };
 const init = function() {
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
@@ -2912,6 +2913,27 @@ class View {
         const markup = this._generateMarkup();
         this._clear();
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    update(data) {
+        if (!data || Array.isArray(data) && data.length === 0) return this.renderError();
+        this._data = data;
+        const newMarkup = this._generateMarkup(); //to jest string w ktorym mamy elementy DOM zapisane ale jako string, wiec nie mozemy tego porownac z DOM elementem ktory juz jest na stronie wiec muismy przekonwerowac ten string na DOM ELEMENT zeby moc porownac z DOM ELEMENTEM ktory jest juz wydrenderowany na stronie
+        const newDOM = document.createRange().createContextualFragment(newMarkup); //w ten sposob konwertujemy stringa z htmla do DOM ELEMENTU w celu np wlasnie porownania dom elemntow itp. Mimo ze nie ma go na naszej stronie wyrednerowanego to jest to DOM element i mozemy go uzywac normalnie tak jak uzywamy DOM elementow ktore sa na naszej stronie. On sie normlanie updejtuje itp mimo ze nie jest wyswiuetalny na stronie, zachowuje sie jak normalny dom element(taki wirtualny DOM)
+        const newElements = Array.from(newDOM.querySelectorAll("*")); //w ten sposob mozemy wybrac wszytskie elementy jakie są w naszym DOM elemencie newDom. "*" wybiera wsyztskie elementy i musimy zastosowac querySelectorAll i wynikiem tego bedzie nodeList(Node list nalezy konwertowac do prawidzwej array za pomoca Array.from) ze wszytskimi elementami ktore znajdują sie w srodku tego DOM elemnetu newDOM. i kazdu z tych elementow w tablicy ma proprties duzo i jedna z nich jest textContent/innerHTML i stamtad mozemy wyciganac z jakim tekstem by sie wyrenderowal ten element (a u nas sie ten textContent/innerHTML z kazdym klinieciem updejtuje wiec z kazdym kliknieciem ten element odnosnie liczby servings bedzie sie updejtowal)
+        const curElements = Array.from(this._parentElement.querySelectorAll("*"));
+        //zeby porownac ten wirtualny nowy DOM z DOMEM na stronie to trzeba tutaj wybrac te elementy DOMU na stronie ktore odpowiadają elementom zamknietym w newDOM
+        newElements.forEach((newEl, i)=>{
+            const curElement = curElements[i]; // w ten sposob bedziemy loopowac przed curElements tez, przez te dwie array jednoczesnie w celu porownania ich
+            //updates changed text
+            if (!newEl.isEqualNode(curElement) && newEl.firstChild?.nodeValue.trim() !== "") curElement.textContent = newEl.textContent; //jak nie są taki same text conetenty w w starym i nowym elemencie DOM to w  starym wygenrowany na stronie DOM  zmioeniamy jego textContent na textContent nowego elementu DOM i ten stary sie zamieni na nowy na stronie. Przez to ze to tez zwroci false dla rodzicow elementow w ktorych sie zmienilo cos to musimy jeszcze zrobic tak zeby to dzialalo tylko dla elementow w ktorych jest sam tekst przez co nie bedzie wybierac elemenmtow rodzicow dlatego wszytskie elementy ktore są w arrays(w naszych arrays mamy nie elementy tylko nodes, bo nie kazdy node to element ale kazdy element to node,bo mamy rozne typu nodes, oprocz elementow jest jeszcze text node,comment noder, atrinbute node itp) nalezy na nich uzyc firstChild i firstChild uzyte na node zworci node ktore jest pierwszym dzieckiem tego parent node. Wiec sprawdzamy czy  firstChild to bedzie text node za pomocą nodeValue (jak node jest inny niz text node to zwraca null a jak jest text node to zwraca text) i jeszce uzywamy trim() zebhy uciac whitespaces i przyrownujemy to zeby nie bylo pustym stringiem. to sprawdzenie przejda elementy co maja w sobie tylko text czyli no <btn clas'gowno>esssa</btn> itp
+            // nowyElemnt,isEqualNode(StaryElement) sprawdza czy 2 elementy DOM są takie same, zwraca false jak nie sa i zwraca true jak sa. Jak porownujemy tak jak tutaj to nie dosc ze zwroci false w elementach w tkorych cos sie zmienilo to rowniez zwroci false w rodziach tych elementow no bo ich dziecko w srodku sie zmienilo.
+            //updates changed atributes
+            if (!newEl.isEqualNode(curElement)) {
+                // teraz musimy jeszcze zupdejtowac dataSety na batonach - i + bo one maja poczatkowo dataSet ustawiony na servings-1 i servings-1 i z kazdym kliknieciem trzeba zmienic im ten dataSet, nie mozemyu zrobic tego w tym samym ifie co u gory bo tam wchodza tylko nodes co maja w sobie tyko text a nasze btny maja w sobie svg wiec nigdy nie wejda do tego ifa gornego wiec musimy zrobic osobne sprawdzenie dla nich w ktorym sprawdzamy jedynie czy elementy sie roznia miedzy soba
+                newEl.attributes; // .atribbutes dla kazdego elementu ktory zworci nam object z jego atrybutami a wiec  dzieki temu ze w tym ifie wykona sie to tylko dla elementow w kotrych cos sie zmienilo to bedziemy mogli wziac ich atrybuty w objecie zmienic na array przeloopowac i  wlozyc do starego htmla przez co sie zupdejtują i bedą dzialac btny(taka sam konwencja jak dla textu)
+                Array.from(newEl.attributes).forEach((attr)=>curElement.setAttribute(attr.name, attr.value)); //bierzemy object z  atrybutami nowegoElementu kotry jest inny niz odpowiadajacym mu staryElement zmieniamy go na array i dal kazdego z tych atrybutow ustwiamy go jako atrybut starego elementu ktory  odpowiada temu nowemuElemetowi i znajduje sie juz na streonie. uzywamy setAtribute(nazwa atrybutu, wartosc atrybutu)
+            }
+        });
     }
     _clear() {
         this._parentElement.innerHTML = "";

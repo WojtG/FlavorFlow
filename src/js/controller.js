@@ -51,7 +51,7 @@ const controlSearchResults = async function () {
     // 4) Render pagination btns
     paginationView.render(model.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
   } catch (err) {
-    console.log(err); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac
+    resultsView.renderError(); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac, dlatrego tu go jednak handlowalem
   }
 };
 
@@ -70,7 +70,8 @@ const controlServings = function (newServings) {
   // 1) update recipe ingredients and servings
   model.updateServings(newServings);
   // 2) Redner the recipe view
-  recipeView.render(model.state.recipe); //rendderujemy jeszcze raz cael view zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
+  // recipeView.render(model.state.recipe); //rendderujemy jeszcze raz caly view przepisu zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
+  recipeView.update(model.state.recipe); //to bedzie updejtowalo tylko text i atrybuty w DOM a nie ze bedzie cale wysiwetlanie przpeisu jeszcze raz sie bedzie musialo zrobic tak jak w tym wczesnijeszym sposobie
 };
 
 const init = function () {
