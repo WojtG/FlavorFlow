@@ -12,9 +12,12 @@ class resulsView extends View {
   } //ta metoda mimo ze sie tak samo nazywa jak w recipeView to bedzie inny html generowala w obydwu view wiec nie moze byc jednej metody dla obydwu klas w klasie rodzicu.
 
   _generateMarkupPreview(rec) {
+    const id = window.location.hash.slice(1); //id z window pobieramy
     return `
     <li class="preview">
-        <a class="preview__link" href="#${rec.id}">
+        <a class="preview__link ${
+          id === rec.id ? 'preview__link--active' : ''
+        }" href="#${rec.id}">
             <figure class="preview__fig">
                 <img src="${rec.image}" alt="" />
             </figure>

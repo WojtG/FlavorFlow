@@ -595,6 +595,8 @@ const controlRecipies = async function() {
     try {
         const id = window.location.hash.slice(1); // hash w url bedzie taki sam jak id naszego przepisu wiec wyciagamy hash i na jego podstawie bedziemy fetchowac dane. musi byc splice(1) bo normlanie sie zwraca z #przed id a my potrzebujemy bez #
         if (!id) return; //trzeba takie sprawdzenie bo inaczej jakbysmy zaladowali strone bez konkertnego przepisu (bez hasha) to by bylo error bo by sie response nie pobral itp bo id wtedy nie istnieje. To jest przypoadek jak wchodzimy na glowna strone. Wiec trzeba dac ze jak nie ma id to funckja returnuje
+        //0 ) Update results view to mark selected search result
+        (0, _resultsViewJsDefault.default).update(_modelJs.getSearchResultsPage()); //upodejtujemy strone na ktorej jestesmy
         (0, _recipeViewJsDefault.default).renderSpinner();
         //1) loading recipe
         await _modelJs.loadRecipe(id); //tutaj wywolujemy tylko funkcje z modelu, to jest logika dzialania aplikacji, cala logika biznesowa tej funckji jest zamknieta w modelu. To jest async fuynckja wiec returnuje promise wiec trzeba awaitowac zeby dosyac jej wynik. jestesmy w  srodku innej async funckji wiec tak jak normlanie w async funckji kazdy promise sie awaituje. nie zamykamy tego w nowym variable bo ten promise ktory returnuje funckja async nie ma zadnej wartosci, (czyli ze funckja async zawsze returnuje promisa ale zeby ten promise mial jakas wartosc to trzeba uzyc return 'cos' w tej funmckji async i to bedzie ta wartosc zreturnowanego promisa)
@@ -2915,7 +2917,6 @@ class View {
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
     }
     update(data) {
-        if (!data || Array.isArray(data) && data.length === 0) return this.renderError();
         this._data = data;
         const newMarkup = this._generateMarkup(); //to jest string w ktorym mamy elementy DOM zapisane ale jako string, wiec nie mozemy tego porownac z DOM elementem ktory juz jest na stronie wiec muismy przekonwerowac ten string na DOM ELEMENT zeby moc porownac z DOM ELEMENTEM ktory jest juz wydrenderowany na stronie
         const newDOM = document.createRange().createContextualFragment(newMarkup); //w ten sposob konwertujemy stringa z htmla do DOM ELEMENTU w celu np wlasnie porownania dom elemntow itp. Mimo ze nie ma go na naszej stronie wyrednerowanego to jest to DOM element i mozemy go uzywac normalnie tak jak uzywamy DOM elementow ktore sa na naszej stronie. On sie normlanie updejtuje itp mimo ze nie jest wyswiuetalny na stronie, zachowuje sie jak normalny dom element(taki wirtualny DOM)
@@ -3310,9 +3311,10 @@ class resulsView extends (0, _viewDefault.default) {
         return this._data.map((rec)=>this._generateMarkupPreview(rec)).join("");
     }
     _generateMarkupPreview(rec) {
+        const id = window.location.hash.slice(1); //id z window pobieramy
         return `
     <li class="preview">
-        <a class="preview__link" href="#${rec.id}">
+        <a class="preview__link ${id === rec.id ? "preview__link--active" : ""}" href="#${rec.id}">
             <figure class="preview__fig">
                 <img src="${rec.image}" alt="" />
             </figure>

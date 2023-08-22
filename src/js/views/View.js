@@ -15,8 +15,6 @@ export default class View {
   }
 
   update(data) {
-    if (!data || (Array.isArray(data) && data.length === 0))
-      return this.renderError();
     this._data = data;
 
     const newMarkup = this._generateMarkup(); //to jest string w ktorym mamy elementy DOM zapisane ale jako string, wiec nie mozemy tego porownac z DOM elementem ktory juz jest na stronie wiec muismy przekonwerowac ten string na DOM ELEMENT zeby moc porownac z DOM ELEMENTEM ktory jest juz wydrenderowany na stronie

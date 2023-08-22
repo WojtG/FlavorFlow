@@ -18,6 +18,10 @@ const controlRecipies = async function () {
 
     if (!id) return; //trzeba takie sprawdzenie bo inaczej jakbysmy zaladowali strone bez konkertnego przepisu (bez hasha) to by bylo error bo by sie response nie pobral itp bo id wtedy nie istnieje. To jest przypoadek jak wchodzimy na glowna strone. Wiec trzeba dac ze jak nie ma id to funckja returnuje
 
+    //0 ) Update results view to mark selected search result
+
+    resultsView.update(model.getSearchResultsPage()); //upodejtujemy strone na ktorej jestesmy
+
     recipeView.renderSpinner();
 
     //1) loading recipe
