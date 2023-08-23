@@ -50,7 +50,7 @@ const controlSearchResults = async function () {
     await model.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
 
     // 3) Render results
-    resultsView.render(model.getSearchResultsPage(1));
+    resultsView.render(model.getSearchResultsPage());
 
     // 4) Render pagination btns
     paginationView.render(model.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render

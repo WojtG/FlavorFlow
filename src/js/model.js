@@ -52,6 +52,7 @@ export const loadSearchResults = async function (query) {
         image: recipe.image_url,
       };
     });
+    state.search.page = 1; //resetujemy wartosc strony zeby przy nowym wyszukaniu nie wyswitelilo nam na numerze strony na ktorym skionczylismy w poprzednim wyszukiwaniu tylko zeby zaczelo od 1 stroy
   } catch (err) {
     throw err;
   }

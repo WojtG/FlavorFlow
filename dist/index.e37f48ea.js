@@ -616,7 +616,7 @@ const controlSearchResults = async function() {
         // 2) Load search query
         await _modelJs.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
         // 3) Render results
-        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(1));
+        (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage());
         // 4) Render pagination btns
         (0, _paginationViewJsDefault.default).render(_modelJs.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
     } catch (err) {
@@ -2091,6 +2091,7 @@ const loadSearchResults = async function(query) {
                 image: recipe.image_url
             };
         });
+        state.search.page = 1; //resetujemy wartosc strony zeby przy nowym wyszukaniu nie wyswitelilo nam na numerze strony na ktorym skionczylismy w poprzednim wyszukiwaniu tylko zeby zaczelo od 1 stroy
     } catch (err) {
         throw err;
     }
