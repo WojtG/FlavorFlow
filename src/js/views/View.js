@@ -4,12 +4,14 @@ export default class View {
   // klasa ktora bedzie parent klasa dla pozostalych klas, exportujemy ją do wsyztskich child klas zeby mozna bylo ją extendowac. dajemy tu metody i porpties ktore beda sie powtarzac w wiekszosci view. Jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas
 
   _data;
-  render(data) {
+  render(data, render = true) {
     if (!data || (Array.isArray(data) && data.length === 0))
       return this.renderError(); //sprawdzenie czy są dane przy ladowaniu search resultow i przy ladowaniu przepisu, ale to imo srednio tu pasuje
     this._data = data; //w tej metodzie stowrzymy #data ktore bedzie trzymalo dane o przepisie, i teraz ten przepis bedzie dostyepny pod tą property data wiec mozemy go wykorzystywac w innych metodach np  w #generateMarkup ktora stworzy nam htmla
 
     const markup = this._generateMarkup();
+
+    if (!render) return markup; //dajemy to po to zeby nasze previewView dzialalo i zeby dzialalo tak jak opsiane w bookmarksView ze wtedy render returnuje htmla a nie renderuje bo akurat tego potrzeba w bookmarksView i w resultsView
     this._clear();
     this._parentElement.insertAdjacentHTML('afterbegin', markup);
   }

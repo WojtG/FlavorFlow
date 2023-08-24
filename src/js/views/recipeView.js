@@ -19,6 +19,15 @@ class RecipeView extends View {
     });
   }
 
+  addHandlerAddBookmark(handler) {
+    this._parentElement.addEventListener('click', function (e) {
+      //tu tez event delegation stosujmey bo to sie stosuje jak mamy kilka sibling elementow ktorym chcemy dac event listenera oraz dla elementow ktore nie sa wygenerowane przy pierwszym zaladowaniu strony, to nie jesy wygenerowane przy pierwszym zaladowaniu wiec musimy stsosowac event delegacje
+      const btnEl = e.target.closest('.btn--bookmark');
+      if (!btnEl) return;
+      handler();
+    });
+  }
+
   addHandlerRender(handler) {
     //tj publisher i musi dostac dostep do subscribera zeby sie mogl wykonac event, ale nie woilno nam imoprtowac niz z kontrolera do view, wiec tworzymy funckje ktora jako argument przyjmie event handlera
 
@@ -85,9 +94,11 @@ class RecipeView extends View {
 
       <div class="recipe__user-generated"> 
       </div>
-      <button class="btn--round">
+      <button class="btn--round btn--bookmark">
         <svg class="">
-          <use href="${icons}#icon-bookmark-fill"></use>
+          <use href="${icons}#icon-bookmark${
+      this._data.bookmarked ? '-fill' : ' '
+    }"></use>
         </svg>
       </button>
     </div>

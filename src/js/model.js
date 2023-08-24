@@ -11,6 +11,7 @@ export const state = {
     page: 1,
     resultsPerPage: RES_PER_PAGE,
   },
+  bookmarks: [],
 };
 
 export const loadRecipe = async function (id) {
@@ -32,6 +33,11 @@ export const loadRecipe = async function (id) {
       cookingTime: recipe.cooking_time,
       ingredients: recipe.ingredients,
     }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+
+    if (state.bookmarks.some(bookmark => bookmark.id === id))
+      state.recipe.bookmarked = true;
+    else state.recipe.bookmarked = false;
+    //dzieki temu checkowi przy ladowaniu recipe sprawdzamy czy kotrykowilek z recipes ktore sa w array bookmarks ma takie samo id jak id recipe ktore teraz pobieramy, jak tak to ustawm mu property .bookmarked= true a jak nie to false. Dzieki temu przy ladowaniu z api kazdy przepis bedzie mial ta properties przez co pozniej jak klikniemy w inny przepis i spowrotem w ten to state.recipe.bookmarked dalej bedzie dostepne na tym objectie bo inaczej bez tego przepis pobral by sie z API raz jeszvze i mimo ze w addBookmark() dodajemy ta property to ona sie nie zapisze.
   } catch (err) {
     throw err; //throwujemy go zeby jak wystrapi tu blad to zeby loadRecipe zworcilo rejected promisa ktorego wartosc to bedzie ten error, i zebysmyh mogli uzyc tego w controlerze.
   }
@@ -89,3 +95,20 @@ export const updateServings = function (newServings) {
 
   state.recipe.servings = newServings;
 };
+
+export const addBookmark = function (recipe) {
+  // Add bookmark
+  state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
+
+  // Mark current recipe
+  if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+}; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
+
+export const deleteBookmark = function (id) {
+  // Delete bookmark
+  const index = state.bookmarks.findIndex(bookmark => bookmark.id === id);
+  if (index === -1) return;
+  state.bookmarks.splice(index, 1); //usuwamy element z array dzieki czemu przy zmianie na inny recipe i spowortem na ten bedziemy miec zupdejtowane znaczek bookmarka
+  // Unmark current recipe
+  state.recipe.bookmarked = false; // dzieki temu na current recipe ktory sie wysiwetla usunie nam sie bookmark
+}; //to jest taki pattern w programowaniu ze jak chcemy cos dodac to dajemy jako argfument cale dane a jakc chemy usunac to podajemy jako argument samo id

@@ -3,9 +3,11 @@ import * as model from './model.js';
 import recipeView from './views/recipeView.js'; //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
+import bookmarksView from './views/bookmarksView.js';
 import paginationView from './views/paginationView.js';
 import 'regenerator-runtime/runtime';
 import 'core-js/stable';
+import { async } from 'regenerator-runtime';
 
 // if (module.hot) {
 //   module.hot.accept();
@@ -21,6 +23,7 @@ const controlRecipies = async function () {
     //0 ) Update results view to mark selected search result
 
     resultsView.update(model.getSearchResultsPage()); //upodejtujemy strone na ktorej jestesmy
+    bookmarksView.update(model.state.bookmarks); //dajemy tu z tego pwoodu zeby przy kazdym ladowaniu sie nowego przepisu to uruchomic bo inaczej nie dziala klasa active w tym bookmark contenerze
 
     recipeView.renderSpinner();
 
@@ -78,9 +81,22 @@ const controlServings = function (newServings) {
   recipeView.update(model.state.recipe); //to bedzie updejtowalo tylko text i atrybuty w DOM a nie ze bedzie cale wysiwetlanie przpeisu jeszcze raz sie bedzie musialo zrobic tak jak w tym wczesnijeszym sposobie
 };
 
+const controlAddBookmarks = function () {
+  // 1) Add/remove bookmarks
+  if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);
+  //dodajemy bookmarka dla current recipe i pozniej updejtujemy wysiwtelamy na stronie DOM
+  else model.deleteBookmark(model.state.recipe.id);
+  // 2) Update recipe view
+  recipeView.update(model.state.recipe);
+
+  // 3) Update bookmarks view
+  bookmarksView.render(model.state.bookmarks); //za kazdym razem jak nacisniemy bedzie sie renderowac cala array z bookmarkami przez co sie bedzie updejtowac DOM w zaleznosic czy dodamy czy usuniemY bookmark. Dlatego tez w state potrzebowalismy array bookmarks zeby pozniej moc wyrenderowac w miejscu przeznaczonym dla bookamarkow te ktore sa w tej array
+}; //jak recipe nie jest bookmarked to chcemy dodac bookamrka po klinieciu a jak jest bookmarked to chcemy po klikenicu usunac bookmarka, jest taki pattern w programowaniu ze jak cos dodajemy to sie podaje wszytskie dane a jak cos usuwamy to tylko id
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
   recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmarks);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
 };
