@@ -651,7 +651,11 @@ const controlAddBookmarks = function() {
     // 3) Update bookmarks view
     (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks); //za kazdym razem jak nacisniemy bedzie sie renderowac cala array z bookmarkami przez co sie bedzie updejtowac DOM w zaleznosic czy dodamy czy usuniemY bookmark. Dlatego tez w state potrzebowalismy array bookmarks zeby pozniej moc wyrenderowac w miejscu przeznaczonym dla bookamarkow te ktore sa w tej array
 }; //jak recipe nie jest bookmarked to chcemy dodac bookamrka po klinieciu a jak jest bookmarked to chcemy po klikenicu usunac bookmarka, jest taki pattern w programowaniu ze jak cos dodajemy to sie podaje wszytskie dane a jak cos usuwamy to tylko id
+const controlBookmarks = function() {
+    (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
+}; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
 const init = function() {
+    (0, _bookmarksViewJsDefault.default).addHandlerRender(controlBookmarks);
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
     (0, _recipeViewJsDefault.default).addHandlerUpdateServings(controlServings);
     (0, _recipeViewJsDefault.default).addHandlerAddBookmark(controlAddBookmarks);
@@ -2141,11 +2145,15 @@ const updateServings = function(newServings) {
     });
     state.recipe.servings = newServings;
 };
+const storeBookmarks = function() {
+    localStorage.setItem("bookmarks", JSON.stringify(state.bookmarks));
+}; //funckja ktora bedzie nam zapisac array z bookamarkami w localStorage, podamy ją do addBookmark i deleteBookmark zeby sie updejtowala za kazdym razem jak dodamy lub usuniemy bookmark
 const addBookmark = function(recipe) {
     // Add bookmark
     state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
     // Mark current recipe
     if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+    storeBookmarks();
 }; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
 const deleteBookmark = function(id) {
     // Delete bookmark
@@ -2154,7 +2162,16 @@ const deleteBookmark = function(id) {
     state.bookmarks.splice(index, 1); //usuwamy element z array dzieki czemu przy zmianie na inny recipe i spowortem na ten bedziemy miec zupdejtowane znaczek bookmarka
     // Unmark current recipe
     state.recipe.bookmarked = false; // dzieki temu na current recipe ktory sie wysiwetla usunie nam sie bookmark
+    storeBookmarks();
 }; //to jest taki pattern w programowaniu ze jak chcemy cos dodac to dajemy jako argfument cale dane a jakc chemy usunac to podajemy jako argument samo id
+const init = function() {
+    const storage = localStorage.getItem("bookmarks");
+    if (storage) state.bookmarks = JSON.parse(storage);
+}; ///funckja ktora odrazu po zaladowaniu bedzie wyicgala dane z local storage i zapisywala je odrazu w array z bookmarkami jesli jakies bedą w localStorage.  dzieki temu bedziemy mogly wyrednerowac bookmarki odrazu po zaladowaniu strony
+init();
+const clearBookmark = function() {
+    localStorage.clear("bookmarks");
+}; // clearBookmark(); for development purposes
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
@@ -3360,7 +3377,7 @@ class resulsView extends (0, _viewDefault.default) {
 }
 exports.default = new resulsView();
 
-},{"url:../../img/icons.svg":"loVOp","./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./previewView":"1FDQ6"}],"1FDQ6":[function(require,module,exports) {
+},{"./View":"5cUXS","./previewView":"1FDQ6","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"1FDQ6":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _iconsSvg = require("url:../../img/icons.svg");
@@ -3401,6 +3418,9 @@ class bookmarksView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".bookmarks__list");
     _errorMessage = "You haven't added any bookmarks yet. Discover a delightful recipe and save it!";
     _message = "";
+    addHandlerRender(handler) {
+        window.addEventListener("load", handler);
+    }
     _generateMarkup() {
         //to tradycyjnie sie odpali jak render zadziala(nie ten render w srodku funckji! tylko booksmarkView.render(jakies dane))
         return this._data.map((bookmark)=>(0, _previewViewDefault.default).render(bookmark, false)).join(""); ///dla kazego bookmarka odpalamy funkje render, w render jest ustawiany _data wiec mozemy tego uzyc teraz w previewView w celu tworzenia htmla. Dodajemy drugi argument do rendera bo tutaj w generate markup my mui8usmy zwrocic stringa z markupem, dlatego w renderze dajemy drugi argumenr render i jak ustawimy go na false to wtedy render nie wydernerduje tylko zreturnuje htmla w stringu wiec to co chcemy
@@ -3408,7 +3428,7 @@ class bookmarksView extends (0, _viewDefault.default) {
 }
 exports.default = new bookmarksView();
 
-},{"url:../../img/icons.svg":"loVOp","./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./previewView":"1FDQ6"}],"6z7bi":[function(require,module,exports) {
+},{"./View":"5cUXS","./previewView":"1FDQ6","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"6z7bi":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _view = require("./View");

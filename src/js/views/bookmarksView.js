@@ -8,6 +8,10 @@ class bookmarksView extends View {
     "You haven't added any bookmarks yet. Discover a delightful recipe and save it!";
   _message = '';
 
+  addHandlerRender(handler) {
+    window.addEventListener('load', handler);
+  }
+
   _generateMarkup() {
     //to tradycyjnie sie odpali jak render zadziala(nie ten render w srodku funckji! tylko booksmarkView.render(jakies dane))
     return this._data

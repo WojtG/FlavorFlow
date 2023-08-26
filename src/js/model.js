@@ -96,12 +96,17 @@ export const updateServings = function (newServings) {
   state.recipe.servings = newServings;
 };
 
+const storeBookmarks = function () {
+  localStorage.setItem('bookmarks', JSON.stringify(state.bookmarks));
+}; //funckja ktora bedzie nam zapisac array z bookamarkami w localStorage, podamy ją do addBookmark i deleteBookmark zeby sie updejtowala za kazdym razem jak dodamy lub usuniemy bookmark
+
 export const addBookmark = function (recipe) {
   // Add bookmark
   state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
 
   // Mark current recipe
   if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+  storeBookmarks();
 }; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
 
 export const deleteBookmark = function (id) {
@@ -111,4 +116,17 @@ export const deleteBookmark = function (id) {
   state.bookmarks.splice(index, 1); //usuwamy element z array dzieki czemu przy zmianie na inny recipe i spowortem na ten bedziemy miec zupdejtowane znaczek bookmarka
   // Unmark current recipe
   state.recipe.bookmarked = false; // dzieki temu na current recipe ktory sie wysiwetla usunie nam sie bookmark
+  storeBookmarks();
 }; //to jest taki pattern w programowaniu ze jak chcemy cos dodac to dajemy jako argfument cale dane a jakc chemy usunac to podajemy jako argument samo id
+
+const init = function () {
+  const storage = localStorage.getItem('bookmarks');
+  if (storage) state.bookmarks = JSON.parse(storage);
+}; ///funckja ktora odrazu po zaladowaniu bedzie wyicgala dane z local storage i zapisywala je odrazu w array z bookmarkami jesli jakies bedą w localStorage.  dzieki temu bedziemy mogly wyrednerowac bookmarki odrazu po zaladowaniu strony
+
+init();
+
+const clearBookmark = function () {
+  localStorage.clear('bookmarks');
+};
+// clearBookmark(); for development purposes
