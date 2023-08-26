@@ -588,6 +588,8 @@ var _bookmarksViewJs = require("./views/bookmarksView.js");
 var _bookmarksViewJsDefault = parcelHelpers.interopDefault(_bookmarksViewJs);
 var _paginationViewJs = require("./views/paginationView.js");
 var _paginationViewJsDefault = parcelHelpers.interopDefault(_paginationViewJs);
+var _addRecipeViewJs = require("./views/addRecipeView.js");
+var _addRecipeViewJsDefault = parcelHelpers.interopDefault(_addRecipeViewJs);
 var _runtime = require("regenerator-runtime/runtime");
 var _regeneratorRuntime = require("regenerator-runtime");
 // if (module.hot) {
@@ -654,6 +656,10 @@ const controlAddBookmarks = function() {
 const controlBookmarks = function() {
     (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
 }; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
+const controlAddRecipe = function(newRecipe) {
+    //dane o new recipe przyjdą do controlera z view jako arugment handlera
+    console.log(newRecipe);
+};
 const init = function() {
     (0, _bookmarksViewJsDefault.default).addHandlerRender(controlBookmarks);
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
@@ -661,10 +667,11 @@ const init = function() {
     (0, _recipeViewJsDefault.default).addHandlerAddBookmark(controlAddBookmarks);
     (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
     (0, _paginationViewJsDefault.default).addHandlerClick(controlPagination);
+    (0, _addRecipeViewJsDefault.default).addHandlerUpload(controlAddRecipe);
 };
 init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","./views/addRecipeView.js":"i6DNj","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
 "use strict";
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("52e9b3eefbbce1ed");
@@ -3380,10 +3387,10 @@ exports.default = new resulsView();
 },{"./View":"5cUXS","./previewView":"1FDQ6","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"1FDQ6":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-var _iconsSvg = require("url:../../img/icons.svg");
-var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 var _view = require("./View");
 var _viewDefault = parcelHelpers.interopDefault(_view);
+var _iconsSvg = require("url:../../img/icons.svg");
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class previewView extends (0, _viewDefault.default) {
     _parentElement = "";
     _generateMarkup() {
@@ -3405,7 +3412,7 @@ class previewView extends (0, _viewDefault.default) {
 }
 exports.default = new previewView(); //ten view jest wspolny dla resultsView i bookmarksView, bedzie on tylko generowal element o klasie 'preview' bo takiego elementu uzywamy w obydwu tych wyzej wymienonych view
 
-},{"url:../../img/icons.svg":"loVOp","./View":"5cUXS","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4Lqzq":[function(require,module,exports) {
+},{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4Lqzq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _view = require("./View"); // exportujemy parent klase,jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas jka np wysiwtelanie spinnera itp
@@ -3518,6 +3525,54 @@ class PaginationView extends (0, _viewDefault.default) {
 }
 exports.default = new PaginationView();
 
-},{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","../config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["aD7Zm","aenu9"], "aenu9", "parcelRequire0fb8")
+},{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","../config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"i6DNj":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _view = require("./View");
+var _viewDefault = parcelHelpers.interopDefault(_view);
+var _iconsSvg = require("url:../../img/icons.svg");
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
+class addRecipeView extends (0, _viewDefault.default) {
+    _parentElement = document.querySelector(".upload");
+    _window = document.querySelector(".add-recipe-window");
+    _overlay = document.querySelector(".overlay");
+    _btnOpen = document.querySelector(".nav__btn--add-recipe");
+    _btnClose = document.querySelector(".btn--close-modal");
+    constructor(){
+        super(); //nawet jak zadnej property nie chcemy odziedzyczc w klasie dziecku zbey byla odrazu stworzona na jej instacjach( bo i tak mozemy z nich korzytsac bo beda w prototypie) to i tak musimy napisac super() i zostawic puste chyba ze nie ma wgl contrutora. Tu bedzie bo addHandlerShowWindow robi rzeczy tylko zwiazane z domem, wiec nie trzeba go podawac do controlera i wystraczy go wywolwac w consturtorze zeby przy zaladowaniu strony juz odpalil i zeby sie ten addEventListener dodal do btnOpen i czekal na event, jedyne co trzeba zrobic z controlerem to imoprotowac do niego instancje tej klasy
+        this._addHandlerShowWindow();
+        this._addHandlerHideWindow();
+    }
+    _toggleWindow() {
+        this._window.classList.toggle("hidden"); //dzieki temu toggle a nie remove i add w obydwu funckjach tych pod spodem mozemy uzyc tej funckji
+        this._overlay.classList.toggle("hidden");
+    }
+    _addHandlerShowWindow() {
+        this._btnOpen.addEventListener("click", this._toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
+    }
+    _addHandlerHideWindow() {
+        [
+            this._btnClose,
+            this._overlay
+        ].forEach((ev)=>ev.addEventListener("click", this._toggleWindow.bind(this)));
+        document.body.addEventListener("keydown", (e)=>{
+            //arow funckja zeby, bo arrow funkjce nie maja swojego this tylko wezma this z najblizszego przodka ktore jest okreslone wiec tu wezmie this z klasy i zadziala tak jak trzeba
+            if (e.key === "Escape") this._toggleWindow();
+        });
+    }
+    addHandlerUpload(handler) {
+        this._parentElement.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const dataArray = [
+                ...new FormData(this)
+            ]; //new FormData to API ktory wyciaga wszytskie dane z inputow z forma i zamyka w dziwnym obiekcie  ktorego nie da sie uzyc dlatego musimy te dane zamknac w nowej array uzywajac spread operatora ta array co powsytanie to bedzie array w ktorej na kazdym miejscu bedzie array z 2 wartosciami, pierwszą bedzie name jaki byl przypisany do inputu a drugi to value wpisana do inputu. Piszemy new FormData(element DOM ktory jest formem) tutaj napisalismy this bo wywolujmey na tym formie eventListenera wiec this w eventListenrze to element na kotrym wywolalismy eventListenera wiec w tym przypadku nasz form
+            const data = Object.fromEntries(dataArray); //jako ze dataArray dala nam tablice z entries a nasze przepisy byly zamkniete jako object to uzywamy Object.fromEntries(tablica z entries) i stworzy nowy obiekt na podstawie tej tablicy z entries ktora podalismy, jhest to ptzeciwiesntwo metody Object.entries(nazwa obiektu) ktory zmienial obiekt na tablice z entries
+            handler(data); //podajermy te dane z forma do kontrolera w postaci argumentu
+        });
+    }
+}
+exports.default = new addRecipeView();
+
+},{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["aD7Zm","aenu9"], "aenu9", "parcelRequire0fb8")
 
 //# sourceMappingURL=index.e37f48ea.js.map

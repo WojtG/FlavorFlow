@@ -5,6 +5,7 @@ import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import bookmarksView from './views/bookmarksView.js';
 import paginationView from './views/paginationView.js';
+import addRecipeView from './views/addRecipeView.js';
 import 'regenerator-runtime/runtime';
 import 'core-js/stable';
 import { async } from 'regenerator-runtime';
@@ -92,10 +93,15 @@ const controlAddBookmarks = function () {
   // 3) Update bookmarks view
   bookmarksView.render(model.state.bookmarks); //za kazdym razem jak nacisniemy bedzie sie renderowac cala array z bookmarkami przez co sie bedzie updejtowac DOM w zaleznosic czy dodamy czy usuniemY bookmark. Dlatego tez w state potrzebowalismy array bookmarks zeby pozniej moc wyrenderowac w miejscu przeznaczonym dla bookamarkow te ktore sa w tej array
 }; //jak recipe nie jest bookmarked to chcemy dodac bookamrka po klinieciu a jak jest bookmarked to chcemy po klikenicu usunac bookmarka, jest taki pattern w programowaniu ze jak cos dodajemy to sie podaje wszytskie dane a jak cos usuwamy to tylko id
+
 const controlBookmarks = function () {
   bookmarksView.render(model.state.bookmarks);
 }; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
 
+const controlAddRecipe = function (newRecipe) {
+  //dane o new recipe przyjdą do controlera z view jako arugment handlera
+  console.log(newRecipe);
+};
 const init = function () {
   bookmarksView.addHandlerRender(controlBookmarks);
   recipeView.addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
@@ -103,6 +109,7 @@ const init = function () {
   recipeView.addHandlerAddBookmark(controlAddBookmarks);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
+  addRecipeView.addHandlerUpload(controlAddRecipe);
 };
 
 init();
