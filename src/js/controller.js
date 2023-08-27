@@ -1,5 +1,6 @@
 //Controller łączy funckje, metody zmienne z view i z modelu. do view i modelu nie importujemy zadnych rzeczy z kontrolera ani do view/modelu nie importujemy nic z modelu/view
 import * as model from './model.js';
+import { MODAL_CLOSE_SEC } from './config.js';
 import recipeView from './views/recipeView.js'; //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
@@ -98,10 +99,28 @@ const controlBookmarks = function () {
   bookmarksView.render(model.state.bookmarks);
 }; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
 
-const controlAddRecipe = function (newRecipe) {
-  //dane o new recipe przyjdą do controlera z view jako arugment handlera
-  console.log(newRecipe);
+const controlAddRecipe = async function (newRecipe) {
+  try {
+    //render spinner
+    addRecipeView.renderSpinner();
+    //dane o new recipe przyjdą do controlera z view jako arugment handlera
+    await model.uploadRecipe(newRecipe); // i teraz podajemy je do funckji z  modelu gdzie je przekonwertujemy do wlasciwego formatu odpowiadajacego obiketom przychodfxacym z API, wyslemy do API, otrzymamy responsa na podsyawie tych wyslanych danych doda property isBookmarked, doda do tabeli bookmarks i zapiszemy je w model.state.recipe
+
+    //render recipe
+    recipeView.render(model.state.recipe);
+
+    //success message
+    addRecipeView.renderMessage();
+
+    //Close form widnow
+    setTimeout(function () {
+      addRecipeView.toggleWindow();
+    }, MODAL_CLOSE_SEC * 1000); ///nie mozesz odrazu do setTimout podac  addRecipeView.toggleWindow jako arugmnetu tylko musisz wyywolac w srodku funckji bo inaczej this nie bedzie pointowalo na to na co pointuje w addRecipeView.toggleWindow()
+  } catch (err) {
+    addRecipeView.renderError(err.message);
+  }
 };
+
 const init = function () {
   bookmarksView.addHandlerRender(controlBookmarks);
   recipeView.addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view

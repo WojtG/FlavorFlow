@@ -1,6 +1,6 @@
 import { async } from 'regenerator-runtime';
-import { API_URL, RES_PER_PAGE } from './config';
-import { getJSON } from './helpers';
+import { API_URL, RES_PER_PAGE, KEY } from './config';
+import { getJSON, sendJSON } from './helpers';
 
 export const state = {
   //exportujemy zeby moc uzyc w  controllerze. W state poiiwnny byc zapisane wszytskie data o aplikacji i powinno byc to sychroniczne z view
@@ -14,25 +14,31 @@ export const state = {
   bookmarks: [],
 };
 
+const createRecipeObject = function (data) {
+  //jak argument dosytaje obiekt data
+  const { recipe } = data.data; //desctructing, przeipis jest w obiekcie recipe, tworzymy zmienna  zeby zmienic nazwy properties ktore przyszedł z api, zeby sie z konwencją nazewnicrwa JS zgadzaly (bo mają _ zamiast camelCase)
+
+  //refactoring properties names in API's data
+
+  //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
+
+  return {
+    id: recipe.id, //nowaNazwa: wartosc kotra sie kryla pod stara nazwa
+    title: recipe.title,
+    publisher: recipe.publisher,
+    sourceUrl: recipe.source_url,
+    image: recipe.image_url,
+    servings: recipe.servings,
+    cookingTime: recipe.cooking_time,
+    ingredients: recipe.ingredients,
+    ...(recipe.key && { key: recipe.key }), //w ten sposob mozemy conditionaly dodawac do obiektu properties z jakas wartoscia. Uzywamy tutaj and operatora ktory jak trafi na false value to ją resturnuje, a jak nie trafi na zadna false value to returnuje ostanią rzecz a wiec tutaj and operator sprawdza czy na obiekcie recipe istnieje property .key jak nie istenieje tj false to ją zwraca (pozniej spreaduje ale spredowanie niczego to dalej nic) a jak istnieje to idze dalej i zwraca ostatnia rzecz  w tym wyrazeniu czyli object {key:recipe.key} i wystraczy go teraz zespredowac i doda sie property key z wartoscia recipe.key a jak nie isntnieje recipe.key to nie doda sie nic. Musimy zamknac { key: recipe.key } w obiekcie i pozniej to spreadowac bo inaczej nie zadziala jak nie wykonammy tych dwoch rzeczy
+  }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+};
+
 export const loadRecipe = async function (id) {
   try {
     const data = await getJSON(`${API_URL}${id}`);
-    const { recipe } = data.data; //desctructing, przeipis jest w obiekcie recipe, tworzymy zmienna  zeby zmienic nazwy properties ktore przyszedł z api, zeby sie z konwencją nazewnicrwa JS zgadzaly (bo mają _ zamiast camelCase)
-
-    //refactoring properties names in API's data
-
-    //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
-
-    state.recipe = {
-      id: recipe.id, //nowaNazwa: wartosc kotra sie kryla pod stara nazwa
-      title: recipe.title,
-      publisher: recipe.publisher,
-      sourceUrl: recipe.source_url,
-      image: recipe.image_url,
-      servings: recipe.servings,
-      cookingTime: recipe.cooking_time,
-      ingredients: recipe.ingredients,
-    }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+    state.recipe = createRecipeObject(data);
 
     if (state.bookmarks.some(bookmark => bookmark.id === id))
       state.recipe.bookmarked = true;
@@ -73,8 +79,6 @@ export const getSearchResultsPage = function (page = state.search.page) {
 }; //nie jest async bo search resulty sa juz zaladowane w tym punkcie gdy bedzimey wywolywac tą fucnkje, nie sa jedynie wyrenederowane.bedziemy po prostu w tej funckji wyciagac z tablicy state.search.results okresloną liczbe wynikow dla kazdej strony i pozniej wkladac ten wycinek do controlera gdzie rendeorwalismy wyniki
 
 export const updateServings = function (newServings) {
-  // console.log(state.recipe.ingredients);
-
   // state.recipe.ingredients = state.recipe.ingredients.map(ing => {
   //   return {
   //     quantity:
@@ -105,7 +109,7 @@ export const addBookmark = function (recipe) {
   state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
 
   // Mark current recipe
-  if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+  if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie(current recipe zapisanym w state.recipe) to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
   storeBookmarks();
 }; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
 
@@ -130,3 +134,54 @@ const clearBookmark = function () {
   localStorage.clear('bookmarks');
 };
 // clearBookmark(); for development purposes
+
+export const uploadRecipe = async function (newRecipe) {
+  try {
+    // const ingredients = Object.entries(newRecipe)
+    //   .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
+    //   .map(ing => ing[1].replaceAll(' ','').split(','))
+    //   .map(ing => {
+    //     return {
+    //       quantity: ing[0],
+    //       unit: ing[1],
+    //       description: ing[2],
+    //     };
+    //   });
+    const ingredients = Object.entries(newRecipe)
+      .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
+      .map(ing => {
+        const ingArr = ing[1].replaceAll(' ', '').split(',');
+        if (ingArr.length !== 3)
+          //dzieki temu sprawdzmay czy jesy dobry formart wprowadzony, w sensie czu iser wprowadzil quantity, unit, description
+          throw new Error(
+            'Wrong ingredient format! Please use the correct format'
+          );
+
+        const [quantity, unit, description] = ingArr;
+
+        return { quantity: quantity ? +quantity : null, unit, description };
+      }); //Zamieniamy obiekt ktory przyszedl na array entries zeby moznma bylo przeiterowac i filtrujemy z niego array z ingrideints sprawdzajac w tej array entries czy na pierwszym miejscu czyli tam gdziie jesy key to czy zaczyna sie z property z nazwą ingredients, jesli tak to wrzuci to do tej array ktora tworzymy. startsWith(string) to metoda dla stringow ktora sprawdza czy string zaczyna sie na dany string jaki podalismy w nawiasie. Pozniej opis ingredient sa zamkaniete na indexie 1 w tej array z entries wiec mapujemy je i splitujemy z przecinkiem a nastepenie na podsyawie tej array robimy desctructing i  tworzymy obiekt w tym samym formacie co przyjmuje API
+
+    const recipe = {
+      //teraz tworzymy obiekt ktory wyglada tak samo jak ten ktory dostajemy z API (jeszcze przed tym jak zmienimy mu property names) i to on bedzie wysylany do API
+      // nie podajemy id: no bo go nie ma ,
+      title: newRecipe.title,
+      source_url: newRecipe.sourceUrl,
+      image_url: newRecipe.image,
+      publisher: newRecipe.publisher,
+      cooking_time: +newRecipe.cookingTime,
+      servings: +newRecipe.servings,
+      ingredients,
+    };
+    const data = await sendJSON(`${API_URL}?key=${KEY}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
+
+    state.recipe = createRecipeObject(data);
+    //Teraz jak sie udalo wyslac do API i dostalismy response z danymi to trzeba spowrotem stworzyc nowy obiekt na podstawie danych z obiektu kotry przeszedl z API, Ten obiekt musi miec takie same property names jak na poczatku okreslalaismy zeby funckje dzialaly tez na tym obiekcie (czyli ammy taka sama sytuacje jak w linicje 39) + musi miec jeszzce property z wartoiscia API KEY
+
+    // state.recipe.key = data.data.recipe.key; mozna tu dodac key do tego obiektu ale zrobimy to w funkcji createRecipeObject() i bedziemy conditionaly dodawac tą property jak istnieje
+
+    addBookmark(state.recipe); //dodajemy bookamrka dla tego przepisu
+  } catch (err) {
+    throw err;
+  }
+};

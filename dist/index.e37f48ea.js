@@ -578,6 +578,7 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _webImmediateJs = require("core-js/modules/web.immediate.js");
 var _modelJs = require("./model.js");
+var _configJs = require("./config.js");
 var _recipeViewJs = require("./views/recipeView.js"); //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
 var _searchViewJs = require("./views/searchView.js");
@@ -656,9 +657,23 @@ const controlAddBookmarks = function() {
 const controlBookmarks = function() {
     (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
 }; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
-const controlAddRecipe = function(newRecipe) {
-    //dane o new recipe przyjdą do controlera z view jako arugment handlera
-    console.log(newRecipe);
+const controlAddRecipe = async function(newRecipe) {
+    try {
+        //render spinner
+        (0, _addRecipeViewJsDefault.default).renderSpinner();
+        //dane o new recipe przyjdą do controlera z view jako arugment handlera
+        await _modelJs.uploadRecipe(newRecipe); // i teraz podajemy je do funckji z  modelu gdzie je przekonwertujemy do wlasciwego formatu odpowiadajacego obiketom przychodfxacym z API, wyslemy do API, otrzymamy responsa na podsyawie tych wyslanych danych doda property isBookmarked, doda do tabeli bookmarks i zapiszemy je w model.state.recipe
+        //render recipe
+        (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
+        //success message
+        (0, _addRecipeViewJsDefault.default).renderMessage();
+        //Close form widnow
+        setTimeout(function() {
+            (0, _addRecipeViewJsDefault.default).toggleWindow();
+        }, (0, _configJs.MODAL_CLOSE_SEC) * 1000); ///nie mozesz odrazu do setTimout podac  addRecipeView.toggleWindow jako arugmnetu tylko musisz wyywolac w srodku funckji bo inaczej this nie bedzie pointowalo na to na co pointuje w addRecipeView.toggleWindow()
+    } catch (err) {
+        (0, _addRecipeViewJsDefault.default).renderError(err.message);
+    }
 };
 const init = function() {
     (0, _bookmarksViewJsDefault.default).addHandlerRender(controlBookmarks);
@@ -671,7 +686,7 @@ const init = function() {
 };
 init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","./views/addRecipeView.js":"i6DNj","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","./views/addRecipeView.js":"i6DNj","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config.js":"k5Hzs"}],"49tUX":[function(require,module,exports) {
 "use strict";
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("52e9b3eefbbce1ed");
@@ -2071,6 +2086,7 @@ parcelHelpers.export(exports, "getSearchResultsPage", ()=>getSearchResultsPage);
 parcelHelpers.export(exports, "updateServings", ()=>updateServings);
 parcelHelpers.export(exports, "addBookmark", ()=>addBookmark);
 parcelHelpers.export(exports, "deleteBookmark", ()=>deleteBookmark);
+parcelHelpers.export(exports, "uploadRecipe", ()=>uploadRecipe);
 var _regeneratorRuntime = require("regenerator-runtime");
 var _config = require("./config");
 var _helpers = require("./helpers");
@@ -2085,22 +2101,29 @@ const state = {
     },
     bookmarks: []
 };
+const createRecipeObject = function(data) {
+    //jak argument dosytaje obiekt data
+    const { recipe } = data.data; //desctructing, przeipis jest w obiekcie recipe, tworzymy zmienna  zeby zmienic nazwy properties ktore przyszedł z api, zeby sie z konwencją nazewnicrwa JS zgadzaly (bo mają _ zamiast camelCase)
+    //refactoring properties names in API's data
+    //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
+    return {
+        id: recipe.id,
+        title: recipe.title,
+        publisher: recipe.publisher,
+        sourceUrl: recipe.source_url,
+        image: recipe.image_url,
+        servings: recipe.servings,
+        cookingTime: recipe.cooking_time,
+        ingredients: recipe.ingredients,
+        ...recipe.key && {
+            key: recipe.key
+        }
+    }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+};
 const loadRecipe = async function(id) {
     try {
         const data = await (0, _helpers.getJSON)(`${(0, _config.API_URL)}${id}`);
-        const { recipe } = data.data; //desctructing, przeipis jest w obiekcie recipe, tworzymy zmienna  zeby zmienic nazwy properties ktore przyszedł z api, zeby sie z konwencją nazewnicrwa JS zgadzaly (bo mają _ zamiast camelCase)
-        //refactoring properties names in API's data
-        //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
-        state.recipe = {
-            id: recipe.id,
-            title: recipe.title,
-            publisher: recipe.publisher,
-            sourceUrl: recipe.source_url,
-            image: recipe.image_url,
-            servings: recipe.servings,
-            cookingTime: recipe.cooking_time,
-            ingredients: recipe.ingredients
-        }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+        state.recipe = createRecipeObject(data);
         if (state.bookmarks.some((bookmark)=>bookmark.id === id)) state.recipe.bookmarked = true;
         else state.recipe.bookmarked = false;
     //dzieki temu checkowi przy ladowaniu recipe sprawdzamy czy kotrykowilek z recipes ktore sa w array bookmarks ma takie samo id jak id recipe ktore teraz pobieramy, jak tak to ustawm mu property .bookmarked= true a jak nie to false. Dzieki temu przy ladowaniu z api kazdy przepis bedzie mial ta properties przez co pozniej jak klikniemy w inny przepis i spowrotem w ten to state.recipe.bookmarked dalej bedzie dostepne na tym objectie bo inaczej bez tego przepis pobral by sie z API raz jeszvze i mimo ze w addBookmark() dodajemy ta property to ona sie nie zapisze.
@@ -2135,7 +2158,6 @@ const getSearchResultsPage = function(page = state.search.page) {
     return state.search.results.slice(start, end); //slice robi nam wycinek array, tak jak na stringach dziala, od indexu start do indexu end ale end nie wchopdzi w sklad nowej array
 }; //nie jest async bo search resulty sa juz zaladowane w tym punkcie gdy bedzimey wywolywac tą fucnkje, nie sa jedynie wyrenederowane.bedziemy po prostu w tej funckji wyciagac z tablicy state.search.results okresloną liczbe wynikow dla kazdej strony i pozniej wkladac ten wycinek do controlera gdzie rendeorwalismy wyniki
 const updateServings = function(newServings) {
-    // console.log(state.recipe.ingredients);
     // state.recipe.ingredients = state.recipe.ingredients.map(ing => {
     //   return {
     //     quantity:
@@ -2159,7 +2181,7 @@ const addBookmark = function(recipe) {
     // Add bookmark
     state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
     // Mark current recipe
-    if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+    if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie(current recipe zapisanym w state.recipe) to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
     storeBookmarks();
 }; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
 const deleteBookmark = function(id) {
@@ -2178,7 +2200,50 @@ const init = function() {
 init();
 const clearBookmark = function() {
     localStorage.clear("bookmarks");
-}; // clearBookmark(); for development purposes
+};
+const uploadRecipe = async function(newRecipe) {
+    try {
+        // const ingredients = Object.entries(newRecipe)
+        //   .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
+        //   .map(ing => ing[1].replaceAll(' ','').split(','))
+        //   .map(ing => {
+        //     return {
+        //       quantity: ing[0],
+        //       unit: ing[1],
+        //       description: ing[2],
+        //     };
+        //   });
+        const ingredients = Object.entries(newRecipe).filter((entry)=>entry[0].startsWith("ingredient") && entry[1] !== "").map((ing)=>{
+            const ingArr = ing[1].replaceAll(" ", "").split(",");
+            if (ingArr.length !== 3) //dzieki temu sprawdzmay czy jesy dobry formart wprowadzony, w sensie czu iser wprowadzil quantity, unit, description
+            throw new Error("Wrong ingredient format! Please use the correct format");
+            const [quantity, unit, description] = ingArr;
+            return {
+                quantity: quantity ? +quantity : null,
+                unit,
+                description
+            };
+        }); //Zamieniamy obiekt ktory przyszedl na array entries zeby moznma bylo przeiterowac i filtrujemy z niego array z ingrideints sprawdzajac w tej array entries czy na pierwszym miejscu czyli tam gdziie jesy key to czy zaczyna sie z property z nazwą ingredients, jesli tak to wrzuci to do tej array ktora tworzymy. startsWith(string) to metoda dla stringow ktora sprawdza czy string zaczyna sie na dany string jaki podalismy w nawiasie. Pozniej opis ingredient sa zamkaniete na indexie 1 w tej array z entries wiec mapujemy je i splitujemy z przecinkiem a nastepenie na podsyawie tej array robimy desctructing i  tworzymy obiekt w tym samym formacie co przyjmuje API
+        const recipe = {
+            //teraz tworzymy obiekt ktory wyglada tak samo jak ten ktory dostajemy z API (jeszcze przed tym jak zmienimy mu property names) i to on bedzie wysylany do API
+            // nie podajemy id: no bo go nie ma ,
+            title: newRecipe.title,
+            source_url: newRecipe.sourceUrl,
+            image_url: newRecipe.image,
+            publisher: newRecipe.publisher,
+            cooking_time: +newRecipe.cookingTime,
+            servings: +newRecipe.servings,
+            ingredients
+        };
+        const data = await (0, _helpers.sendJSON)(`${(0, _config.API_URL)}?key=${(0, _config.KEY)}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
+        state.recipe = createRecipeObject(data);
+        //Teraz jak sie udalo wyslac do API i dostalismy response z danymi to trzeba spowrotem stworzyc nowy obiekt na podstawie danych z obiektu kotry przeszedl z API, Ten obiekt musi miec takie same property names jak na poczatku okreslalaismy zeby funckje dzialaly tez na tym obiekcie (czyli ammy taka sama sytuacje jak w linicje 39) + musi miec jeszzce property z wartoiscia API KEY
+        // state.recipe.key = data.data.recipe.key; mozna tu dodac key do tego obiektu ale zrobimy to w funkcji createRecipeObject() i bedziemy conditionaly dodawac tą property jak istnieje
+        addBookmark(state.recipe); //dodajemy bookamrka dla tego przepisu
+    } catch (err) {
+        throw err;
+    }
+};
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
@@ -2771,9 +2836,13 @@ parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "API_URL", ()=>API_URL);
 parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC);
 parcelHelpers.export(exports, "RES_PER_PAGE", ()=>RES_PER_PAGE);
+parcelHelpers.export(exports, "KEY", ()=>KEY);
+parcelHelpers.export(exports, "MODAL_CLOSE_SEC", ()=>MODAL_CLOSE_SEC);
 const API_URL = "https://forkify-api.herokuapp.com/api/v2/recipes/";
 const TIMEOUT_SEC = 10;
 const RES_PER_PAGE = 10;
+const KEY = "6b5835d4-04a3-4df7-a2b5-a95f54ae259f";
+const MODAL_CLOSE_SEC = 2;
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -2810,6 +2879,7 @@ exports.export = function(dest, destName, get) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "getJSON", ()=>getJSON);
+parcelHelpers.export(exports, "sendJSON", ()=>sendJSON);
 var _regeneratorRuntime = require("regenerator-runtime");
 var _config = require("./config");
 const timeout = function(s) {
@@ -2821,8 +2891,31 @@ const timeout = function(s) {
 }; // funckja ktora robi ze promise bedzie rejected po ilus tam skeundach. uzyjemy jej w  Promise.race() z fetchowaniuem zeby upewnic sie ze fetchowanie bedzie odrzucone jak bedzie wyukonywac sie dluzej niz okresliumy tu sekundy w funckji timeout
 const getJSON = async function(url) {
     try {
+        const fetchPromise = fetch(url);
         const response = await Promise.race([
-            fetch(url),
+            fetchPromise,
+            timeout((0, _config.TIMEOUT_SEC))
+        ]);
+        const data = await response.json();
+        if (!response.ok) throw new Error(`${data.message} (${response.status})`);
+        return data;
+    } catch (err) {
+        throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
+    }
+};
+const sendJSON = async function(url, uploadData) {
+    try {
+        const fetchPromise = fetch(url, {
+            method: "POST",
+            headers: {
+                //zawsze tez trzeba okreslic headers w ktorym okreslamy jaki typ dancych chcemy wyslac, bez okreslenia typu danych w headerze API nie zadziala, jest kilka standartowych header. Ten header uzywamy jak chcemy wyslac do API cos co jest JSON
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(uploadData)
+        });
+        //jak chcemy cos wyslac do API a pobrac to oprocvz url tego API w fetchu (TEN URL MUSI ZAWIERAC API KEY BO ZEBY WYSYLAC RZERCZY DO API TRZEBA MIEC API KEY) trzba dodac obiket z opcjami. A nastepnie jak juz wyslemy fetcha do APi to wszytsko robimy jakbysmy pobierali dane bezposrednio z API a wiec awaitujemy response itp, wszytsko to co pod spodem
+        const response = await Promise.race([
+            fetchPromise,
             timeout((0, _config.TIMEOUT_SEC))
         ]);
         const data = await response.json();
@@ -3019,7 +3112,7 @@ class View {
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
     }
     //renderowanie bledow zawsze musi sie dziac na ekranie UI zeby widzial je uzytkowanik wiec wysiwtelanie i generowanie bledu powinno byc w view zawsze. teraz tą metode sie wezmie i jako ze jest public API to uzyje sie ją w controloerze do handlowania bledów
-    renderError(message1 = this._errorMessage) {
+    renderError(message = this._errorMessage) {
         const markup = `
     <div class="error">
       <div>
@@ -3027,7 +3120,7 @@ class View {
           <use href="${(0, _iconsSvgDefault.default)}#icon-alert-triangle"></use>
         </svg>
       </div>
-      <p>${message1}</p>
+      <p>${message}</p>
     </div>
 `;
         this._clear();
@@ -3042,7 +3135,7 @@ class View {
           <use href="${(0, _iconsSvgDefault.default)}#icon-smile"></use>
         </svg>
       </div>
-      <p>${message}</p>
+      <p>${msg}</p>
     </div>
 `;
         this._clear();
@@ -3534,6 +3627,7 @@ var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class addRecipeView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".upload");
+    _message = "The recipe has been uploaded successfully";
     _window = document.querySelector(".add-recipe-window");
     _overlay = document.querySelector(".overlay");
     _btnOpen = document.querySelector(".nav__btn--add-recipe");
@@ -3543,21 +3637,21 @@ class addRecipeView extends (0, _viewDefault.default) {
         this._addHandlerShowWindow();
         this._addHandlerHideWindow();
     }
-    _toggleWindow() {
+    toggleWindow() {
         this._window.classList.toggle("hidden"); //dzieki temu toggle a nie remove i add w obydwu funckjach tych pod spodem mozemy uzyc tej funckji
         this._overlay.classList.toggle("hidden");
     }
     _addHandlerShowWindow() {
-        this._btnOpen.addEventListener("click", this._toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
+        this._btnOpen.addEventListener("click", this.toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
     }
     _addHandlerHideWindow() {
         [
             this._btnClose,
             this._overlay
-        ].forEach((ev)=>ev.addEventListener("click", this._toggleWindow.bind(this)));
+        ].forEach((ev)=>ev.addEventListener("click", this.toggleWindow.bind(this)));
         document.body.addEventListener("keydown", (e)=>{
             //arow funckja zeby, bo arrow funkjce nie maja swojego this tylko wezma this z najblizszego przodka ktore jest okreslone wiec tu wezmie this z klasy i zadziala tak jak trzeba
-            if (e.key === "Escape") this._toggleWindow();
+            if (e.key === "Escape") this.toggleWindow();
         });
     }
     addHandlerUpload(handler) {
