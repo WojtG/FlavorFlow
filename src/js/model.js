@@ -1,6 +1,6 @@
 import { async } from 'regenerator-runtime';
 import { API_URL, RES_PER_PAGE, KEY } from './config';
-import { getJSON, sendJSON } from './helpers';
+import { AJAX } from './helpers';
 
 export const state = {
   //exportujemy zeby moc uzyc w  controllerze. W state poiiwnny byc zapisane wszytskie data o aplikacji i powinno byc to sychroniczne z view
@@ -21,7 +21,6 @@ const createRecipeObject = function (data) {
   //refactoring properties names in API's data
 
   //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
-
   return {
     id: recipe.id, //nowaNazwa: wartosc kotra sie kryla pod stara nazwa
     title: recipe.title,
@@ -37,7 +36,8 @@ const createRecipeObject = function (data) {
 
 export const loadRecipe = async function (id) {
   try {
-    const data = await getJSON(`${API_URL}${id}`);
+    const data = await AJAX(`${API_URL}${id}?key=${KEY}`);
+    //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to pobiorą sie nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
     state.recipe = createRecipeObject(data);
 
     if (state.bookmarks.some(bookmark => bookmark.id === id))
@@ -53,7 +53,7 @@ export const loadSearchResults = async function (query) {
   //funckja pobierajaca search resulty, na podstawie query
   try {
     state.search.query = query; //zapisijemy tabele i query w state
-    const data = await getJSON(`${API_URL}?search=${query}`);
+    const data = await AJAX(`${API_URL}?search=${query}&key=${KEY}`); //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to w searchResultach wyskoczą nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
 
     state.search.results = data.data.recipes.map(recipe => {
       //zmapujemy wsyztskie wyniki wyszukiwania i zmienimy im properties names.
@@ -62,6 +62,7 @@ export const loadSearchResults = async function (query) {
         title: recipe.title,
         publisher: recipe.publisher,
         image: recipe.image_url,
+        ...(recipe.key && { key: recipe.key }),
       };
     });
     state.search.page = 1; //resetujemy wartosc strony zeby przy nowym wyszukaniu nie wyswitelilo nam na numerze strony na ktorym skionczylismy w poprzednim wyszukiwaniu tylko zeby zaczelo od 1 stroy
@@ -150,7 +151,7 @@ export const uploadRecipe = async function (newRecipe) {
     const ingredients = Object.entries(newRecipe)
       .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
       .map(ing => {
-        const ingArr = ing[1].replaceAll(' ', '').split(',');
+        const ingArr = ing[1].split(',').map(el => el.trim()); //w ten sposob wszytskie podwojne spacje wyjbiemy z kazdej litery osobno
         if (ingArr.length !== 3)
           //dzieki temu sprawdzmay czy jesy dobry formart wprowadzony, w sensie czu iser wprowadzil quantity, unit, description
           throw new Error(
@@ -173,11 +174,9 @@ export const uploadRecipe = async function (newRecipe) {
       servings: +newRecipe.servings,
       ingredients,
     };
-    const data = await sendJSON(`${API_URL}?key=${KEY}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
-
+    const data = await AJAX(`${API_URL}?key=${KEY}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
     state.recipe = createRecipeObject(data);
     //Teraz jak sie udalo wyslac do API i dostalismy response z danymi to trzeba spowrotem stworzyc nowy obiekt na podstawie danych z obiektu kotry przeszedl z API, Ten obiekt musi miec takie same property names jak na poczatku okreslalaismy zeby funckje dzialaly tez na tym obiekcie (czyli ammy taka sama sytuacje jak w linicje 39) + musi miec jeszzce property z wartoiscia API KEY
-
     // state.recipe.key = data.data.recipe.key; mozna tu dodac key do tego obiektu ale zrobimy to w funkcji createRecipeObject() i bedziemy conditionaly dodawac tą property jak istnieje
 
     addBookmark(state.recipe); //dodajemy bookamrka dla tego przepisu

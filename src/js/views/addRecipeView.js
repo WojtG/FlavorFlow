@@ -17,22 +17,26 @@ class addRecipeView extends View {
     this._addHandlerHideWindow();
   }
 
-  toggleWindow() {
+  _toggleWindow() {
     this._window.classList.toggle('hidden'); //dzieki temu toggle a nie remove i add w obydwu funckjach tych pod spodem mozemy uzyc tej funckji
     this._overlay.classList.toggle('hidden');
   }
 
+  closeWindow() {
+    [this._window, this._overlay].forEach(el => el.classList.add('hidden'));
+  }
+
   _addHandlerShowWindow() {
-    this._btnOpen.addEventListener('click', this.toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
+    this._btnOpen.addEventListener('click', this._toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
   }
   _addHandlerHideWindow() {
     [this._btnClose, this._overlay].forEach(ev =>
-      ev.addEventListener('click', this.toggleWindow.bind(this))
+      ev.addEventListener('click', this._toggleWindow.bind(this))
     );
     document.body.addEventListener('keydown', e => {
       //arow funckja zeby, bo arrow funkjce nie maja swojego this tylko wezma this z najblizszego przodka ktore jest okreslone wiec tu wezmie this z klasy i zadziala tak jak trzeba
       if (e.key === 'Escape') {
-        this.toggleWindow();
+        this._toggleWindow();
       }
     });
   }

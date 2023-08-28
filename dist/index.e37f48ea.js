@@ -616,10 +616,10 @@ const controlRecipies = async function() {
 //W MVC event powinien byc sluchany w view natomiast kod jaki sie ma wykonac dla tego eventu powinien byc w controlerze. Dlatego nalezy zastosowac PUBLISHER-SUBSCRIBER pattern (pattern do oblusgi eventlistenerow w MVC architekturze).Tworzymy w view metode na naszym obiekcie  ktora bedzie tworzyla eventListenera (musi byc w public API) i jako callback funckje dajemy argument handler. Nastepnie w controlerze tworzymy funkcje init ktora zadziala przy starcie strony i w niej wywolujemy tą metode  addHandlerRender() na tym obieckie zaimportowanym z recipeView dla ktorego stworzylismy tą metode, i podajemy do niej  odpowiedni handler z controlera przez co stworzy sie dzialajacy event listener ktorego logika bedzie w controlorze a sluchanie na event w view
 const controlSearchResults = async function() {
     try {
-        (0, _resultsViewJsDefault.default).renderSpinner();
         // 1) Get search query
         const query = (0, _searchViewJsDefault.default).getQuery(); //query z searchview pobieramy i podajemy tutaj jako osoban funckja, bo nie chcemy miec w kontroloerze zadnych dom elementow
         if (!query) return;
+        (0, _resultsViewJsDefault.default).renderSpinner();
         // 2) Load search query
         await _modelJs.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
         // 3) Render results
@@ -667,9 +667,17 @@ const controlAddRecipe = async function(newRecipe) {
         (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
         //success message
         (0, _addRecipeViewJsDefault.default).renderMessage();
+        //Render bookmark view again
+        (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
+        //bookmarksView.update(model.state.bookmarks);
+        //Changing ID in URL
+        //teraz do url musimy podac id naszego dodanego przpeiosu bo tak to nigdy nie bedziemy mogli zaaladowac dodanego przez nas przepisu odrazu po wklejeniu URl bo nie istnieje ID jeszcze dla przepisow przez nas dodanych a nie tych z api
+        window.history.pushState(null, "", `#${_modelJs.state.recipe.id}`); //window.history to api odpowiedajace za URL, pushState() to metoda pozwalajace na zmiane URL/hasza (window.location.hash) bez przeladowywania strony, pierwszy qarugmnet przyjmuj najczesciej null, drugi "" a trzeci to nowy url
+        //window.history.back()
+        // window.history.forward() te dwie metody odpowiednioo jak sie wywolaja to cofaja do porzpedniej lub idą do nasttepnej strony
         //Close form widnow
         setTimeout(function() {
-            (0, _addRecipeViewJsDefault.default).toggleWindow();
+            (0, _addRecipeViewJsDefault.default).closeWindow();
         }, (0, _configJs.MODAL_CLOSE_SEC) * 1000); ///nie mozesz odrazu do setTimout podac  addRecipeView.toggleWindow jako arugmnetu tylko musisz wyywolac w srodku funckji bo inaczej this nie bedzie pointowalo na to na co pointuje w addRecipeView.toggleWindow()
     } catch (err) {
         (0, _addRecipeViewJsDefault.default).renderError(err.message);
@@ -686,7 +694,7 @@ const init = function() {
 };
 init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","./views/addRecipeView.js":"i6DNj","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config.js":"k5Hzs"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","./model.js":"Y4A21","./config.js":"k5Hzs","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM","./views/resultsView.js":"cSbZE","./views/bookmarksView.js":"4Lqzq","./views/paginationView.js":"6z7bi","./views/addRecipeView.js":"i6DNj","regenerator-runtime/runtime":"dXNgZ","regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"49tUX":[function(require,module,exports) {
 "use strict";
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("52e9b3eefbbce1ed");
@@ -2122,7 +2130,8 @@ const createRecipeObject = function(data) {
 };
 const loadRecipe = async function(id) {
     try {
-        const data = await (0, _helpers.getJSON)(`${(0, _config.API_URL)}${id}`);
+        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}${id}?key=${(0, _config.KEY)}`);
+        //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to pobiorą sie nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
         state.recipe = createRecipeObject(data);
         if (state.bookmarks.some((bookmark)=>bookmark.id === id)) state.recipe.bookmarked = true;
         else state.recipe.bookmarked = false;
@@ -2135,14 +2144,17 @@ const loadSearchResults = async function(query) {
     //funckja pobierajaca search resulty, na podstawie query
     try {
         state.search.query = query; //zapisijemy tabele i query w state
-        const data = await (0, _helpers.getJSON)(`${(0, _config.API_URL)}?search=${query}`);
+        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?search=${query}&key=${(0, _config.KEY)}`); //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to w searchResultach wyskoczą nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
         state.search.results = data.data.recipes.map((recipe)=>{
             //zmapujemy wsyztskie wyniki wyszukiwania i zmienimy im properties names.
             return {
                 id: recipe.id,
                 title: recipe.title,
                 publisher: recipe.publisher,
-                image: recipe.image_url
+                image: recipe.image_url,
+                ...recipe.key && {
+                    key: recipe.key
+                }
             };
         });
         state.search.page = 1; //resetujemy wartosc strony zeby przy nowym wyszukaniu nie wyswitelilo nam na numerze strony na ktorym skionczylismy w poprzednim wyszukiwaniu tylko zeby zaczelo od 1 stroy
@@ -2214,7 +2226,7 @@ const uploadRecipe = async function(newRecipe) {
         //     };
         //   });
         const ingredients = Object.entries(newRecipe).filter((entry)=>entry[0].startsWith("ingredient") && entry[1] !== "").map((ing)=>{
-            const ingArr = ing[1].replaceAll(" ", "").split(",");
+            const ingArr = ing[1].split(",").map((el)=>el.trim()); //w ten sposob wszytskie podwojne spacje wyjbiemy z kazdej litery osobno
             if (ingArr.length !== 3) //dzieki temu sprawdzmay czy jesy dobry formart wprowadzony, w sensie czu iser wprowadzil quantity, unit, description
             throw new Error("Wrong ingredient format! Please use the correct format");
             const [quantity, unit, description] = ingArr;
@@ -2235,7 +2247,7 @@ const uploadRecipe = async function(newRecipe) {
             servings: +newRecipe.servings,
             ingredients
         };
-        const data = await (0, _helpers.sendJSON)(`${(0, _config.API_URL)}?key=${(0, _config.KEY)}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
+        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?key=${(0, _config.KEY)}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
         state.recipe = createRecipeObject(data);
         //Teraz jak sie udalo wyslac do API i dostalismy response z danymi to trzeba spowrotem stworzyc nowy obiekt na podstawie danych z obiektu kotry przeszedl z API, Ten obiekt musi miec takie same property names jak na poczatku okreslalaismy zeby funckje dzialaly tez na tym obiekcie (czyli ammy taka sama sytuacje jak w linicje 39) + musi miec jeszzce property z wartoiscia API KEY
         // state.recipe.key = data.data.recipe.key; mozna tu dodac key do tego obiektu ale zrobimy to w funkcji createRecipeObject() i bedziemy conditionaly dodawac tą property jak istnieje
@@ -2878,8 +2890,7 @@ exports.export = function(dest, destName, get) {
 //w tym module trzymamy funckje ktore beda reusowane w projekcie kilka razy
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "getJSON", ()=>getJSON);
-parcelHelpers.export(exports, "sendJSON", ()=>sendJSON);
+parcelHelpers.export(exports, "AJAX", ()=>AJAX);
 var _regeneratorRuntime = require("regenerator-runtime");
 var _config = require("./config");
 const timeout = function(s) {
@@ -2889,31 +2900,17 @@ const timeout = function(s) {
         }, s * 1000);
     });
 }; // funckja ktora robi ze promise bedzie rejected po ilus tam skeundach. uzyjemy jej w  Promise.race() z fetchowaniuem zeby upewnic sie ze fetchowanie bedzie odrzucone jak bedzie wyukonywac sie dluzej niz okresliumy tu sekundy w funckji timeout
-const getJSON = async function(url) {
+const AJAX = async function(url, uploadData) {
     try {
-        const fetchPromise = fetch(url);
-        const response = await Promise.race([
-            fetchPromise,
-            timeout((0, _config.TIMEOUT_SEC))
-        ]);
-        const data = await response.json();
-        if (!response.ok) throw new Error(`${data.message} (${response.status})`);
-        return data;
-    } catch (err) {
-        throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
-    }
-};
-const sendJSON = async function(url, uploadData) {
-    try {
-        const fetchPromise = fetch(url, {
+        const fetchPromise = uploadData ? fetch(url, {
             method: "POST",
             headers: {
                 //zawsze tez trzeba okreslic headers w ktorym okreslamy jaki typ dancych chcemy wyslac, bez okreslenia typu danych w headerze API nie zadziala, jest kilka standartowych header. Ten header uzywamy jak chcemy wyslac do API cos co jest JSON
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(uploadData)
-        });
-        //jak chcemy cos wyslac do API a pobrac to oprocvz url tego API w fetchu (TEN URL MUSI ZAWIERAC API KEY BO ZEBY WYSYLAC RZERCZY DO API TRZEBA MIEC API KEY) trzba dodac obiket z opcjami. A nastepnie jak juz wyslemy fetcha do APi to wszytsko robimy jakbysmy pobierali dane bezposrednio z API a wiec awaitujemy response itp, wszytsko to co pod spodem
+        }) : fetch(url);
+        console.log(fetchPromise);
         const response = await Promise.race([
             fetchPromise,
             timeout((0, _config.TIMEOUT_SEC))
@@ -2922,9 +2919,50 @@ const sendJSON = async function(url, uploadData) {
         if (!response.ok) throw new Error(`${data.message} (${response.status})`);
         return data;
     } catch (err) {
-        throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
+        console.error(err);
+        throw err;
     }
+}; /*
+funckja pobierajaca dane z api
+
+export const getJSON = async function (url) {
+  try {
+    const fetchPromise = fetch(url);
+    const response = await Promise.race([fetchPromise, timeout(TIMEOUT_SEC)]);
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(`${data.message} (${response.status})`);
+    return data;
+  } catch (err) {
+    throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
+  }
 };
+
+funckja ktora wysyla dane do API
+
+export const sendJSON = async function (url, uploadData) {
+  try {
+    const fetchPromise = fetch(url, {
+      method: 'POST', //jak wysylamy cos do api to zawsz musimy okreslic method: 'POST
+      headers: {
+         zawsze tez trzeba okreslic headers w ktorym okreslamy jaki typ dancych chcemy wyslac, bez okreslenia typu danych w headerze API nie zadziala, jest kilka standartowych header. Ten header uzywamy jak chcemy wyslac do API cos co jest JSON
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(uploadData), //tutaj podajemy dane ktore chcemy wyslac i musza byc w formacie zgodnym z headerem dlatego uzywamy JSON.stringify bo w headerze okreslilismy ze dane przyjdą jako JSON
+    });
+
+     jak chcemy cos wyslac do API a pobrac to oprocvz url tego API w fetchu (TEN URL MUSI ZAWIERAC API KEY BO ZEBY WYSYLAC RZERCZY DO API TRZEBA MIEC API KEY) trzba dodac obiket z opcjami. A nastepnie jak juz wyslemy fetcha do APi to wszytsko robimy jakbysmy pobierali dane bezposrednio z API a wiec awaitujemy response itp, wszytsko to co pod spodem
+
+    const response = await Promise.race([fetchPromise, timeout(TIMEOUT_SEC)]);
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(`${data.message} (${response.status})`);
+    return data;
+  } catch (err) {
+    throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
+  }
+};
+*/ 
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l60JC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -3005,7 +3043,10 @@ class RecipeView extends (0, _viewDefault.default) {
         </div>
       </div>
 
-      <div class="recipe__user-generated"> 
+      <div class="recipe__user-generated" ${this._data.key ? "" : "hidden"}> 
+        <svg>
+          <use href="${0, _iconsSvgDefault.default}#icon-user"></use>
+        </svg>
       </div>
       <button class="btn--round btn--bookmark">
         <svg class="">
@@ -3497,7 +3538,13 @@ class previewView extends (0, _viewDefault.default) {
             <div class="preview__data">
                 <h4 class="preview__title">${this._data.title}</h4>
                 <p class="preview__publisher">${this._data.publisher}</p>
+                <div class="preview__user-generated ${this._data.key ? "" : "hidden"}">
+                  <svg>
+                    <use href='${0, _iconsSvgDefault.default}#icon-user'></use>
+                  </svg>
+                </div>
             </div>
+            
         </a>
     </li>
 `;
@@ -3637,21 +3684,27 @@ class addRecipeView extends (0, _viewDefault.default) {
         this._addHandlerShowWindow();
         this._addHandlerHideWindow();
     }
-    toggleWindow() {
+    _toggleWindow() {
         this._window.classList.toggle("hidden"); //dzieki temu toggle a nie remove i add w obydwu funckjach tych pod spodem mozemy uzyc tej funckji
         this._overlay.classList.toggle("hidden");
     }
+    closeWindow() {
+        [
+            this._window,
+            this._overlay
+        ].forEach((el)=>el.classList.add("hidden"));
+    }
     _addHandlerShowWindow() {
-        this._btnOpen.addEventListener("click", this.toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
+        this._btnOpen.addEventListener("click", this._toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
     }
     _addHandlerHideWindow() {
         [
             this._btnClose,
             this._overlay
-        ].forEach((ev)=>ev.addEventListener("click", this.toggleWindow.bind(this)));
+        ].forEach((ev)=>ev.addEventListener("click", this._toggleWindow.bind(this)));
         document.body.addEventListener("keydown", (e)=>{
             //arow funckja zeby, bo arrow funkjce nie maja swojego this tylko wezma this z najblizszego przodka ktore jest okreslone wiec tu wezmie this z klasy i zadziala tak jak trzeba
-            if (e.key === "Escape") this.toggleWindow();
+            if (e.key === "Escape") this._toggleWindow();
         });
     }
     addHandlerUpload(handler) {

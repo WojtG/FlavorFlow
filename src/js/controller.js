@@ -44,12 +44,12 @@ const controlRecipies = async function () {
 
 const controlSearchResults = async function () {
   try {
-    resultsView.renderSpinner();
-
     // 1) Get search query
     const query = searchView.getQuery(); //query z searchview pobieramy i podajemy tutaj jako osoban funckja, bo nie chcemy miec w kontroloerze zadnych dom elementow
 
     if (!query) return;
+
+    resultsView.renderSpinner();
 
     // 2) Load search query
     await model.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
@@ -112,9 +112,23 @@ const controlAddRecipe = async function (newRecipe) {
     //success message
     addRecipeView.renderMessage();
 
+    //Render bookmark view again
+
+    bookmarksView.render(model.state.bookmarks);
+
+    //bookmarksView.update(model.state.bookmarks);
+
+    //Changing ID in URL
+    //teraz do url musimy podac id naszego dodanego przpeiosu bo tak to nigdy nie bedziemy mogli zaaladowac dodanego przez nas przepisu odrazu po wklejeniu URl bo nie istnieje ID jeszcze dla przepisow przez nas dodanych a nie tych z api
+
+    window.history.pushState(null, '', `#${model.state.recipe.id}`); //window.history to api odpowiedajace za URL, pushState() to metoda pozwalajace na zmiane URL/hasza (window.location.hash) bez przeladowywania strony, pierwszy qarugmnet przyjmuj najczesciej null, drugi "" a trzeci to nowy url
+    //window.history.back()
+    // window.history.forward() te dwie metody odpowiednioo jak sie wywolaja to cofaja do porzpedniej lub idą do nasttepnej strony
+
     //Close form widnow
+
     setTimeout(function () {
-      addRecipeView.toggleWindow();
+      addRecipeView.closeWindow();
     }, MODAL_CLOSE_SEC * 1000); ///nie mozesz odrazu do setTimout podac  addRecipeView.toggleWindow jako arugmnetu tylko musisz wyywolac w srodku funckji bo inaczej this nie bedzie pointowalo na to na co pointuje w addRecipeView.toggleWindow()
   } catch (err) {
     addRecipeView.renderError(err.message);

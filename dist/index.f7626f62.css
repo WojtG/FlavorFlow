@@ -517,13 +517,9 @@ body {
 
 .copyright {
   color: #918581;
+  text-align: center;
   margin-top: 4rem;
-  padding: 0 3.5rem;
-  font-size: 1.2rem;
-}
-
-.copyright .twitter-link:link, .copyright .twitter-link:visited {
-  color: #918581;
+  font-size: 1rem;
 }
 
 .recipe {
