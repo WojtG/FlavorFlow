@@ -2255,7 +2255,7 @@ const uploadRecipe = async function(newRecipe) {
     } catch (err) {
         throw err;
     }
-};
+}; // clearBookmark(); for development purposes
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
