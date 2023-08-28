@@ -3042,7 +3042,7 @@ class RecipeView extends (0, _viewDefault.default) {
         </div>
       </div>
 
-      <div class="recipe__user-generated" ${this._data.key ? "" : "hidden"}> 
+      <div class="recipe__user-generated ${this._data.key ? "" : "hidden"}"> 
         <svg>
           <use href="${0, _iconsSvgDefault.default}#icon-user"></use>
         </svg>
