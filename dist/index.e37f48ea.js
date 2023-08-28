@@ -2910,7 +2910,6 @@ const AJAX = async function(url, uploadData) {
             },
             body: JSON.stringify(uploadData)
         }) : fetch(url);
-        console.log(fetchPromise);
         const response = await Promise.race([
             fetchPromise,
             timeout((0, _config.TIMEOUT_SEC))

@@ -24,7 +24,6 @@ export const AJAX = async function (url, uploadData = undefined) {
           body: JSON.stringify(uploadData), //tutaj podajemy dane ktore chcemy wyslac i musza byc w formacie zgodnym z headerem dlatego uzywamy JSON.stringify bo w headerze okreslilismy ze dane przyjdą jako JSON
         })
       : fetch(url);
-    console.log(fetchPromise);
 
     const response = await Promise.race([fetchPromise, timeout(TIMEOUT_SEC)]);
     const data = await response.json();
