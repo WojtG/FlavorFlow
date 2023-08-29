@@ -5,7 +5,7 @@ class previewView extends View {
   _parentElement = '';
 
   _generateMarkup() {
-    const id = window.location.hash.slice(1); //id z window pobieramy
+    const id = window.location.hash.slice(1);
 
     return `
     <li class="preview">
@@ -34,5 +34,3 @@ class previewView extends View {
 }
 
 export default new previewView();
-
-//ten view jest wspolny dla resultsView i bookmarksView, bedzie on tylko generowal element o klasie 'preview' bo takiego elementu uzywamy w obydwu tych wyzej wymienonych view

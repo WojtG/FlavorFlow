@@ -574,12 +574,11 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"aenu9":[function(require,module,exports) {
-//Controller łączy funckje, metody zmienne z view i z modelu. do view i modelu nie importujemy zadnych rzeczy z kontrolera ani do view/modelu nie importujemy nic z modelu/view
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _webImmediateJs = require("core-js/modules/web.immediate.js");
 var _modelJs = require("./model.js");
 var _configJs = require("./config.js");
-var _recipeViewJs = require("./views/recipeView.js"); //imprtujemy obiekt stworzonyt na podsyawie jakiejs klasy wiec mozmey tu uzywac na nim wsyztskich metod i properties kotre sa public API tego obiektu.
+var _recipeViewJs = require("./views/recipeView.js");
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
 var _searchViewJs = require("./views/searchView.js");
 var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
@@ -593,57 +592,49 @@ var _addRecipeViewJs = require("./views/addRecipeView.js");
 var _addRecipeViewJsDefault = parcelHelpers.interopDefault(_addRecipeViewJs);
 var _runtime = require("regenerator-runtime/runtime");
 var _regeneratorRuntime = require("regenerator-runtime");
-// if (module.hot) {
-//   module.hot.accept();
-// }
-//to 0d 9 do 11 linijki nie jest js tylko to jest stricte z parcela i to jak napiszemyu to jak zrobimy zmiany w kodzie to strona nasza sie zupdejtuje ale nie stracimy stejtu aplikajci bo nie odswiezy sie strona,wiec to przydatne do developingu jak chcemy zachowac stan aplikajci a na koniec robot to wyjebviemy
 const controlRecipies = async function() {
     try {
-        const id = window.location.hash.slice(1); // hash w url bedzie taki sam jak id naszego przepisu wiec wyciagamy hash i na jego podstawie bedziemy fetchowac dane. musi byc splice(1) bo normlanie sie zwraca z #przed id a my potrzebujemy bez #
-        if (!id) return; //trzeba takie sprawdzenie bo inaczej jakbysmy zaladowali strone bez konkertnego przepisu (bez hasha) to by bylo error bo by sie response nie pobral itp bo id wtedy nie istnieje. To jest przypoadek jak wchodzimy na glowna strone. Wiec trzeba dac ze jak nie ma id to funckja returnuje
+        const id = window.location.hash.slice(1);
+        if (!id) return;
         //0 ) Update results view to mark selected search result
-        (0, _resultsViewJsDefault.default).update(_modelJs.getSearchResultsPage()); //upodejtujemy strone na ktorej jestesmy
-        (0, _bookmarksViewJsDefault.default).update(_modelJs.state.bookmarks); //dajemy tu z tego pwoodu zeby przy kazdym ladowaniu sie nowego przepisu to uruchomic bo inaczej nie dziala klasa active w tym bookmark contenerze
+        (0, _resultsViewJsDefault.default).update(_modelJs.getSearchResultsPage());
+        (0, _bookmarksViewJsDefault.default).update(_modelJs.state.bookmarks);
         (0, _recipeViewJsDefault.default).renderSpinner();
         //1) loading recipe
-        await _modelJs.loadRecipe(id); //tutaj wywolujemy tylko funkcje z modelu, to jest logika dzialania aplikacji, cala logika biznesowa tej funckji jest zamknieta w modelu. To jest async fuynckja wiec returnuje promise wiec trzeba awaitowac zeby dosyac jej wynik. jestesmy w  srodku innej async funckji wiec tak jak normlanie w async funckji kazdy promise sie awaituje. nie zamykamy tego w nowym variable bo ten promise ktory returnuje funckja async nie ma zadnej wartosci, (czyli ze funckja async zawsze returnuje promisa ale zeby ten promise mial jakas wartosc to trzeba uzyc return 'cos' w tej funmckji async i to bedzie ta wartosc zreturnowanego promisa)
+        await _modelJs.loadRecipe(id);
         //2) rendering the recipe
-        (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe); //na obiekcie stworzonym w view recipeView na podstauwe klasy  recipeView wowlujmy metode render ktora jest public api, ktora uruchomi zapisze nam dane z kroku 1 w property i ta protperty bedzie wykorzystana w prywantej metodzie #generateMarkup ktora odpowieddzialna jesy za stworzenie htmla, a nastepnie render method wyrenderuje
+        (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
     } catch (error) {
-        (0, _recipeViewJsDefault.default).renderError(); //dzieki throw err w modelu w loadRecipe, to jak wystapi tam blad w funckji to zretunruje sie promise z wartoscia tego errora i dzieki throw error w catrchu bedziemy mogli go tu obsluzyc, juz w linicje 21 awaitowalismy wynik tej async funkcji loadRecipe i jak tam bedzie error to on zejdzie tutaj do catcha. Ale nie chcemy nic z tego errora wyciagac tylko w view sobie error mesage piszemy w stringu i podajemy jako deafult value do funkcji.
+        (0, _recipeViewJsDefault.default).renderError();
     }
 };
-//W MVC event powinien byc sluchany w view natomiast kod jaki sie ma wykonac dla tego eventu powinien byc w controlerze. Dlatego nalezy zastosowac PUBLISHER-SUBSCRIBER pattern (pattern do oblusgi eventlistenerow w MVC architekturze).Tworzymy w view metode na naszym obiekcie  ktora bedzie tworzyla eventListenera (musi byc w public API) i jako callback funckje dajemy argument handler. Nastepnie w controlerze tworzymy funkcje init ktora zadziala przy starcie strony i w niej wywolujemy tą metode  addHandlerRender() na tym obieckie zaimportowanym z recipeView dla ktorego stworzylismy tą metode, i podajemy do niej  odpowiedni handler z controlera przez co stworzy sie dzialajacy event listener ktorego logika bedzie w controlorze a sluchanie na event w view
 const controlSearchResults = async function() {
     try {
         // 1) Get search query
-        const query = (0, _searchViewJsDefault.default).getQuery(); //query z searchview pobieramy i podajemy tutaj jako osoban funckja, bo nie chcemy miec w kontroloerze zadnych dom elementow
+        const query = (0, _searchViewJsDefault.default).getQuery();
         if (!query) return;
         (0, _resultsViewJsDefault.default).renderSpinner();
         // 2) Load search query
-        await _modelJs.loadSearchResults(query); //nie zamykamy tego w zmiennej bo loadSearchResults zwraca undefined, ona jednie modykifuje state
+        await _modelJs.loadSearchResults(query);
         // 3) Render results
         (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage());
         // 4) Render pagination btns
-        (0, _paginationViewJsDefault.default).render(_modelJs.state.search); //bedziemy potrzbowali tutaj podac model.state.search, wtedy render zapisze te dane w _data i uzjemy tego _data w _generateMarkup ktory jest wywolywany przez render
+        (0, _paginationViewJsDefault.default).render(_modelJs.state.search);
     } catch (err) {
-        (0, _resultsViewJsDefault.default).renderError(); //tu nawet nie handlujemy erroa bo handlowanyt jest w srodku funckji render, ale imo lepiej tu go handlowac, tak jak w funckji controlRecipies() throwac go z modelu i tu go lapac, dlatrego tu go jednak handlowalem
+        (0, _resultsViewJsDefault.default).renderError();
     }
 };
 const controlPagination = function(goToPage) {
-    //goToPage to numer strony z domu do ktorej mamy isc po klikneciu btna
     // 1) Render new results
-    (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(goToPage)); //renderuja sie nowe resulty wzgledem goToPage, tamte sie usuwaja bo render ma w srodku siebie metode clear() ktora usuwa htmla z rodzica przed dodaniem nowytch wyniukow. paginationView.render(model.state.search zostaje takie samo bo getSearchResultsPage(goToPage) nadpiduje dane w model.state.search.page odnosnie numeru strony
+    (0, _resultsViewJsDefault.default).render(_modelJs.getSearchResultsPage(goToPage));
     // 2) Render new pagination btns
     (0, _paginationViewJsDefault.default).render(_modelJs.state.search);
 };
 const controlServings = function(newServings) {
-    //newSerwings to liczba serwings ktora przyjdzie z domu i zeby ją tu podac to wywoamy tam handlera z arguemntem ktory bedzie odpowiadal wlasnie liczbe nowych serwings / tak samo stosowalismy w controlPagination przy podawaniu goToPage
     // 1) update recipe ingredients and servings
     _modelJs.updateServings(newServings);
     // 2) Redner the recipe view
-    // recipeView.render(model.state.recipe); //rendderujemy jeszcze raz caly view przepisu zamiast tylko recipe ingredients wiec to chujowe bo sie bedzie pobieralo jeszcze zdj itp wiec musimy to zmienic zeby tylko recipe ingredients sie rnederowaly przy nacisnieciu guzika
-    (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe); //to bedzie updejtowalo tylko text i atrybuty w DOM a nie ze bedzie cale wysiwetlanie przpeisu jeszcze raz sie bedzie musialo zrobic tak jak w tym wczesnijeszym sposobie
+    (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe);
 };
 const controlAddBookmarks = function() {
     // 1) Add/remove bookmarks
@@ -652,40 +643,34 @@ const controlAddBookmarks = function() {
     // 2) Update recipe view
     (0, _recipeViewJsDefault.default).update(_modelJs.state.recipe);
     // 3) Update bookmarks view
-    (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks); //za kazdym razem jak nacisniemy bedzie sie renderowac cala array z bookmarkami przez co sie bedzie updejtowac DOM w zaleznosic czy dodamy czy usuniemY bookmark. Dlatego tez w state potrzebowalismy array bookmarks zeby pozniej moc wyrenderowac w miejscu przeznaczonym dla bookamarkow te ktore sa w tej array
-}; //jak recipe nie jest bookmarked to chcemy dodac bookamrka po klinieciu a jak jest bookmarked to chcemy po klikenicu usunac bookmarka, jest taki pattern w programowaniu ze jak cos dodajemy to sie podaje wszytskie dane a jak cos usuwamy to tylko id
+    (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
+};
 const controlBookmarks = function() {
     (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
-}; //potrzebujemy tą funckje zeby jak sie zaladuje strona to zeby wyrenderowalo bookmarki z localStorage, bo pozniej wywolujmey update a nie damy rady updejtowac htmla jak zaden nie jest wyrenderowany
+};
 const controlAddRecipe = async function(newRecipe) {
     try {
         //render spinner
         (0, _addRecipeViewJsDefault.default).renderSpinner();
-        //dane o new recipe przyjdą do controlera z view jako arugment handlera
-        await _modelJs.uploadRecipe(newRecipe); // i teraz podajemy je do funckji z  modelu gdzie je przekonwertujemy do wlasciwego formatu odpowiadajacego obiketom przychodfxacym z API, wyslemy do API, otrzymamy responsa na podsyawie tych wyslanych danych doda property isBookmarked, doda do tabeli bookmarks i zapiszemy je w model.state.recipe
+        await _modelJs.uploadRecipe(newRecipe);
         //render recipe
         (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
         //success message
         (0, _addRecipeViewJsDefault.default).renderMessage();
         //Render bookmark view again
         (0, _bookmarksViewJsDefault.default).render(_modelJs.state.bookmarks);
-        //bookmarksView.update(model.state.bookmarks);
-        //Changing ID in URL
-        //teraz do url musimy podac id naszego dodanego przpeiosu bo tak to nigdy nie bedziemy mogli zaaladowac dodanego przez nas przepisu odrazu po wklejeniu URl bo nie istnieje ID jeszcze dla przepisow przez nas dodanych a nie tych z api
-        window.history.pushState(null, "", `#${_modelJs.state.recipe.id}`); //window.history to api odpowiedajace za URL, pushState() to metoda pozwalajace na zmiane URL/hasza (window.location.hash) bez przeladowywania strony, pierwszy qarugmnet przyjmuj najczesciej null, drugi "" a trzeci to nowy url
-        //window.history.back()
-        // window.history.forward() te dwie metody odpowiednioo jak sie wywolaja to cofaja do porzpedniej lub idą do nasttepnej strony
+        window.history.pushState(null, "", `#${_modelJs.state.recipe.id}`);
         //Close form widnow
         setTimeout(function() {
             (0, _addRecipeViewJsDefault.default).closeWindow();
-        }, (0, _configJs.MODAL_CLOSE_SEC) * 1000); ///nie mozesz odrazu do setTimout podac  addRecipeView.toggleWindow jako arugmnetu tylko musisz wyywolac w srodku funckji bo inaczej this nie bedzie pointowalo na to na co pointuje w addRecipeView.toggleWindow()
+        }, (0, _configJs.MODAL_CLOSE_SEC) * 1000);
     } catch (err) {
         (0, _addRecipeViewJsDefault.default).renderError(err.message);
     }
 };
 const init = function() {
     (0, _bookmarksViewJsDefault.default).addHandlerRender(controlBookmarks);
-    (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies); //sama logika w controlerze, bez eventlistnera ktory jest w view
+    (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipies);
     (0, _recipeViewJsDefault.default).addHandlerUpdateServings(controlServings);
     (0, _recipeViewJsDefault.default).addHandlerAddBookmark(controlAddBookmarks);
     (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
@@ -2099,7 +2084,6 @@ var _regeneratorRuntime = require("regenerator-runtime");
 var _config = require("./config");
 var _helpers = require("./helpers");
 const state = {
-    //exportujemy zeby moc uzyc w  controllerze. W state poiiwnny byc zapisane wszytskie data o aplikacji i powinno byc to sychroniczne z view
     recipe: {},
     search: {
         query: "",
@@ -2110,10 +2094,8 @@ const state = {
     bookmarks: []
 };
 const createRecipeObject = function(data) {
-    //jak argument dosytaje obiekt data
-    const { recipe } = data.data; //desctructing, przeipis jest w obiekcie recipe, tworzymy zmienna  zeby zmienic nazwy properties ktore przyszedł z api, zeby sie z konwencją nazewnicrwa JS zgadzaly (bo mają _ zamiast camelCase)
-    //refactoring properties names in API's data
-    //teraz naz obiekt recipe w state ustawiamy na properties names a ich wartosci ustawiamy na te ktore przyszly z data.data.recipe
+    const { recipe } = data.data;
+    //refactoring properties names coming from API
     return {
         id: recipe.id,
         title: recipe.title,
@@ -2126,27 +2108,23 @@ const createRecipeObject = function(data) {
         ...recipe.key && {
             key: recipe.key
         }
-    }; //nadpisujemy ten object i dajemy nazwy ktore chcemy i przypisujemy im wartosc ktore kryły sie pod starymi nazwami.
+    };
 };
 const loadRecipe = async function(id) {
     try {
         const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}${id}?key=${(0, _config.KEY)}`);
-        //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to pobiorą sie nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
         state.recipe = createRecipeObject(data);
         if (state.bookmarks.some((bookmark)=>bookmark.id === id)) state.recipe.bookmarked = true;
         else state.recipe.bookmarked = false;
-    //dzieki temu checkowi przy ladowaniu recipe sprawdzamy czy kotrykowilek z recipes ktore sa w array bookmarks ma takie samo id jak id recipe ktore teraz pobieramy, jak tak to ustawm mu property .bookmarked= true a jak nie to false. Dzieki temu przy ladowaniu z api kazdy przepis bedzie mial ta properties przez co pozniej jak klikniemy w inny przepis i spowrotem w ten to state.recipe.bookmarked dalej bedzie dostepne na tym objectie bo inaczej bez tego przepis pobral by sie z API raz jeszvze i mimo ze w addBookmark() dodajemy ta property to ona sie nie zapisze.
     } catch (err) {
-        throw err; //throwujemy go zeby jak wystrapi tu blad to zeby loadRecipe zworcilo rejected promisa ktorego wartosc to bedzie ten error, i zebysmyh mogli uzyc tego w controlerze.
+        throw err;
     }
-}; //buisness logic i pobranie danych mają tez byc  w modelu. Controller przy wywolywaniu tej funckji poda id jako argument. Ta fucnkja nic nie returnuje tylko zmienia nasz state object w kotrym bedzie zapisany przepis i ten state object bedzie uzyty przed controleler zeby wziac recipe. Zadzial dlatego ze export i import nie dzialaja na kopiach tylko na jednej zmiuennej, wiec jak tu sie nadpisze state to w controloerze gdziue importujemy tez sie nadpisze state
+};
 const loadSearchResults = async function(query) {
-    //funckja pobierajaca search resulty, na podstawie query
     try {
-        state.search.query = query; //zapisijemy tabele i query w state
-        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?search=${query}&key=${(0, _config.KEY)}`); //do wszytkich AJAX calls podajemy key kotry sluzy do obslugi wyslanych danych, mimo ze tutaj pobieramy dane to jak uwzglednimy key to w searchResultach wyskoczą nam rowniez rzeczy kotre sami przeslalismy do API (nasze przepisy). Jak juz mamy jeden paramter w URL w to kolejny nie dajemy ? tylko &
+        state.search.query = query;
+        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?search=${query}&key=${(0, _config.KEY)}`);
         state.search.results = data.data.recipes.map((recipe)=>{
-            //zmapujemy wsyztskie wyniki wyszukiwania i zmienimy im properties names.
             return {
                 id: recipe.id,
                 title: recipe.title,
@@ -2157,88 +2135,63 @@ const loadSearchResults = async function(query) {
                 }
             };
         });
-        state.search.page = 1; //resetujemy wartosc strony zeby przy nowym wyszukaniu nie wyswitelilo nam na numerze strony na ktorym skionczylismy w poprzednim wyszukiwaniu tylko zeby zaczelo od 1 stroy
+        state.search.page = 1;
     } catch (err) {
         throw err;
     }
 };
 const getSearchResultsPage = function(page = state.search.page) {
-    //defaultowa wartosc page to 1 i zapisana jest w stejcie, jak nie damy zadnego argumentu to sie przjmie 1 jako page
-    state.search.page = page; //storujemy w stejcie aplikacji na ktorej stronie aktualnie jestesmy
-    const start = (page - 1) * state.search.resultsPerPage; //tak bieerzemy pierwsza wartosc (page -1) * ilosc wyniukow ktore chcemy miec na jednej stronie, page zaczyna sie od 1 wiec na pierwszej staonie start zacznie generowac od 0 wyrazu w array na drugiej streoanie jak page bedzie 2 to od 10 wyrazu w array i tak dalej
-    const end = page * state.search.resultsPerPage; //tak koncowy wyraz page * ilosc wyniukow ktore chcemy miec na jednej stronie. dla strony 1 to 10 dla drugiej 20 i tak dalerj
-    return state.search.results.slice(start, end); //slice robi nam wycinek array, tak jak na stringach dziala, od indexu start do indexu end ale end nie wchopdzi w sklad nowej array
-}; //nie jest async bo search resulty sa juz zaladowane w tym punkcie gdy bedzimey wywolywac tą fucnkje, nie sa jedynie wyrenederowane.bedziemy po prostu w tej funckji wyciagac z tablicy state.search.results okresloną liczbe wynikow dla kazdej strony i pozniej wkladac ten wycinek do controlera gdzie rendeorwalismy wyniki
+    state.search.page = page;
+    const start = (page - 1) * state.search.resultsPerPage;
+    const end = page * state.search.resultsPerPage;
+    return state.search.results.slice(start, end);
+};
 const updateServings = function(newServings) {
-    // state.recipe.ingredients = state.recipe.ingredients.map(ing => {
-    //   return {
-    //     quantity:
-    //       ing.quantity !== null ? newServings * ing.quantity : ing.quantity,
-    //     unit: ing.unit,
-    //     description: ing.description,
-    //   };
-    // });
-    //mozna w ten sposob za pomoca map a wiec stworzyc nową state.recipe.ingredients albo zmutowac tą jedna property quantity za pomocą forEach
     state.recipe.ingredients.forEach((ing)=>{
         ing.quantity = ing.quantity * newServings / state.recipe.servings;
-    //nowaIloscSkladnikow = staraIloscSkadników * nowa ilosc porcji/ stara ilosc porcji
-    //przyklad nowaIloscSkladnikow = 2 *8/4 =4 powoila sie ilosc porcji wiec podwoji sie ilosc skladnikow.
     });
     state.recipe.servings = newServings;
 };
 const storeBookmarks = function() {
     localStorage.setItem("bookmarks", JSON.stringify(state.bookmarks));
-}; //funckja ktora bedzie nam zapisac array z bookamarkami w localStorage, podamy ją do addBookmark i deleteBookmark zeby sie updejtowala za kazdym razem jak dodamy lub usuniemy bookmark
+};
 const addBookmark = function(recipe) {
     // Add bookmark
-    state.bookmarks.push(recipe); //to dlatego jesty potrzebne ze jak kliknimy inny przepis to stracimy tego state.recipe.bookmarked = true; bo wtedy przy wybraniu nowego przepisu laduje sie on od nowa z api a w api nie ma state.recipe.bookmarked = true dlatego pushuijuemy to do tej tabeli zeby to pozniej wyciganac i wiedziec ktore recipe byly bookmarked
+    state.bookmarks.push(recipe);
     // Mark current recipe
-    if (recipe.id === state.recipe.id) state.recipe.bookmarked = true; //jak recipe bedzie tym samyhm co sie wysiwetla na stronie(current recipe zapisanym w state.recipe) to sie dodoa propety bookmarked z wartoscia true. Dzieki temu bedzimy mogli wiedziec ze ten przepis jesy bookmarked jak bedziemy uzywac tych danych w recipe view
+    if (recipe.id === state.recipe.id) state.recipe.bookmarked = true;
     storeBookmarks();
-}; //otrzyma recipe ktore jest wyswietlane na stronie, pushuje je do array bookmarks w state i tworzy dla tego pushnietego recipe property bookmarked z wartoscia true
+};
 const deleteBookmark = function(id) {
     // Delete bookmark
     const index = state.bookmarks.findIndex((bookmark)=>bookmark.id === id);
     if (index === -1) return;
-    state.bookmarks.splice(index, 1); //usuwamy element z array dzieki czemu przy zmianie na inny recipe i spowortem na ten bedziemy miec zupdejtowane znaczek bookmarka
+    state.bookmarks.splice(index, 1);
     // Unmark current recipe
-    state.recipe.bookmarked = false; // dzieki temu na current recipe ktory sie wysiwetla usunie nam sie bookmark
+    state.recipe.bookmarked = false;
     storeBookmarks();
-}; //to jest taki pattern w programowaniu ze jak chcemy cos dodac to dajemy jako argfument cale dane a jakc chemy usunac to podajemy jako argument samo id
+};
 const init = function() {
     const storage = localStorage.getItem("bookmarks");
     if (storage) state.bookmarks = JSON.parse(storage);
-}; ///funckja ktora odrazu po zaladowaniu bedzie wyicgala dane z local storage i zapisywala je odrazu w array z bookmarkami jesli jakies bedą w localStorage.  dzieki temu bedziemy mogly wyrednerowac bookmarki odrazu po zaladowaniu strony
+};
 init();
 const clearBookmark = function() {
     localStorage.clear("bookmarks");
 };
 const uploadRecipe = async function(newRecipe) {
     try {
-        // const ingredients = Object.entries(newRecipe)
-        //   .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
-        //   .map(ing => ing[1].replaceAll(' ','').split(','))
-        //   .map(ing => {
-        //     return {
-        //       quantity: ing[0],
-        //       unit: ing[1],
-        //       description: ing[2],
-        //     };
-        //   });
         const ingredients = Object.entries(newRecipe).filter((entry)=>entry[0].startsWith("ingredient") && entry[1] !== "").map((ing)=>{
-            const ingArr = ing[1].split(",").map((el)=>el.trim()); //w ten sposob wszytskie podwojne spacje wyjbiemy z kazdej litery osobno
-            if (ingArr.length !== 3) //dzieki temu sprawdzmay czy jesy dobry formart wprowadzony, w sensie czu iser wprowadzil quantity, unit, description
-            throw new Error("Wrong ingredient format! Please use the correct format");
+            const ingArr = ing[1].split(",").map((el)=>el.trim());
+            if (ingArr.length !== 3) throw new Error("Wrong ingredient format! Please use the correct format");
             const [quantity, unit, description] = ingArr;
             return {
                 quantity: quantity ? +quantity : null,
                 unit,
                 description
             };
-        }); //Zamieniamy obiekt ktory przyszedl na array entries zeby moznma bylo przeiterowac i filtrujemy z niego array z ingrideints sprawdzajac w tej array entries czy na pierwszym miejscu czyli tam gdziie jesy key to czy zaczyna sie z property z nazwą ingredients, jesli tak to wrzuci to do tej array ktora tworzymy. startsWith(string) to metoda dla stringow ktora sprawdza czy string zaczyna sie na dany string jaki podalismy w nawiasie. Pozniej opis ingredient sa zamkaniete na indexie 1 w tej array z entries wiec mapujemy je i splitujemy z przecinkiem a nastepenie na podsyawie tej array robimy desctructing i  tworzymy obiekt w tym samym formacie co przyjmuje API
+        });
         const recipe = {
-            //teraz tworzymy obiekt ktory wyglada tak samo jak ten ktory dostajemy z API (jeszcze przed tym jak zmienimy mu property names) i to on bedzie wysylany do API
-            // nie podajemy id: no bo go nie ma ,
             title: newRecipe.title,
             source_url: newRecipe.sourceUrl,
             image_url: newRecipe.image,
@@ -2247,15 +2200,14 @@ const uploadRecipe = async function(newRecipe) {
             servings: +newRecipe.servings,
             ingredients
         };
-        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?key=${(0, _config.KEY)}`, recipe); //sprawdzaj dokumenctacje ale prawie zawsze rozne rzeczy na api sie robi tak ze po podaniu glownego linka pisze sie ?nazwaParametruPodanaWDokumentacji=wartosc kotra chcemy mu dac. Ta fucnkja to promise wiec trzeba awaitowac i ona oddaje dane wiec trzeba ja zamknac w zmiennej. do tej funckji podajemy url razem z API key bo zeby wysylac rzeczy do api to trzeba miec API key i podajemy rowniez dane ktore chcemy wsylac do API
+        const data = await (0, _helpers.AJAX)(`${(0, _config.API_URL)}?key=${(0, _config.KEY)}`, recipe);
         state.recipe = createRecipeObject(data);
-        //Teraz jak sie udalo wyslac do API i dostalismy response z danymi to trzeba spowrotem stworzyc nowy obiekt na podstawie danych z obiektu kotry przeszedl z API, Ten obiekt musi miec takie same property names jak na poczatku okreslalaismy zeby funckje dzialaly tez na tym obiekcie (czyli ammy taka sama sytuacje jak w linicje 39) + musi miec jeszzce property z wartoiscia API KEY
-        // state.recipe.key = data.data.recipe.key; mozna tu dodac key do tego obiektu ale zrobimy to w funkcji createRecipeObject() i bedziemy conditionaly dodawac tą property jak istnieje
-        addBookmark(state.recipe); //dodajemy bookamrka dla tego przepisu
+        addBookmark(state.recipe);
     } catch (err) {
         throw err;
     }
-}; // clearBookmark(); for development purposes
+};
+clearBookmark();
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","./helpers":"hGI1E","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"dXNgZ":[function(require,module,exports) {
 /**
@@ -2842,7 +2794,6 @@ try {
 }
 
 },{}],"k5Hzs":[function(require,module,exports) {
-//w prawidzym zyciu jest taki plik config.js w ktorym trzymamy zmienne ktora sa const i ktore bedą reusowane w projekcie, pozowli nam to na konfigurowanie szybkie naszego projektu poprzez zmienienie wartosci zmiennej w pliku config. Nie wkladamy tutaj wszytskich zmiennych tylko te wazne z punktu dzialania aplikacji, np adres url API itp bo np jak sie adres url API zmieni to wystraczy ze zupdejtujemy go tutaj i wszytsko bedzie dzialac, zamiast w kazdym miejscu zmieniac tą wartosc
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "API_URL", ()=>API_URL);
@@ -2887,7 +2838,6 @@ exports.export = function(dest, destName, get) {
 };
 
 },{}],"hGI1E":[function(require,module,exports) {
-//w tym module trzymamy funckje ktore beda reusowane w projekcie kilka razy
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "AJAX", ()=>AJAX);
@@ -2899,13 +2849,12 @@ const timeout = function(s) {
             reject(new Error(`Request took too long! Timeout after ${s} second`));
         }, s * 1000);
     });
-}; // funckja ktora robi ze promise bedzie rejected po ilus tam skeundach. uzyjemy jej w  Promise.race() z fetchowaniuem zeby upewnic sie ze fetchowanie bedzie odrzucone jak bedzie wyukonywac sie dluzej niz okresliumy tu sekundy w funckji timeout
+};
 const AJAX = async function(url, uploadData) {
     try {
         const fetchPromise = uploadData ? fetch(url, {
             method: "POST",
             headers: {
-                //zawsze tez trzeba okreslic headers w ktorym okreslamy jaki typ dancych chcemy wyslac, bez okreslenia typu danych w headerze API nie zadziala, jest kilka standartowych header. Ten header uzywamy jak chcemy wyslac do API cos co jest JSON
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(uploadData)
@@ -2921,54 +2870,14 @@ const AJAX = async function(url, uploadData) {
         console.error(err);
         throw err;
     }
-}; /*
-funckja pobierajaca dane z api
-
-export const getJSON = async function (url) {
-  try {
-    const fetchPromise = fetch(url);
-    const response = await Promise.race([fetchPromise, timeout(TIMEOUT_SEC)]);
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(`${data.message} (${response.status})`);
-    return data;
-  } catch (err) {
-    throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
-  }
 };
-
-funckja ktora wysyla dane do API
-
-export const sendJSON = async function (url, uploadData) {
-  try {
-    const fetchPromise = fetch(url, {
-      method: 'POST', //jak wysylamy cos do api to zawsz musimy okreslic method: 'POST
-      headers: {
-         zawsze tez trzeba okreslic headers w ktorym okreslamy jaki typ dancych chcemy wyslac, bez okreslenia typu danych w headerze API nie zadziala, jest kilka standartowych header. Ten header uzywamy jak chcemy wyslac do API cos co jest JSON
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(uploadData), //tutaj podajemy dane ktore chcemy wyslac i musza byc w formacie zgodnym z headerem dlatego uzywamy JSON.stringify bo w headerze okreslilismy ze dane przyjdą jako JSON
-    });
-
-     jak chcemy cos wyslac do API a pobrac to oprocvz url tego API w fetchu (TEN URL MUSI ZAWIERAC API KEY BO ZEBY WYSYLAC RZERCZY DO API TRZEBA MIEC API KEY) trzba dodac obiket z opcjami. A nastepnie jak juz wyslemy fetcha do APi to wszytsko robimy jakbysmy pobierali dane bezposrednio z API a wiec awaitujemy response itp, wszytsko to co pod spodem
-
-    const response = await Promise.race([fetchPromise, timeout(TIMEOUT_SEC)]);
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(`${data.message} (${response.status})`);
-    return data;
-  } catch (err) {
-    throw err; //dajemy throw zeby zworcila fuinckja promisa rejected z wartoscia errora jak sie nie uda sfetchowac, zeby moc sie zajac tym errorem juz w innym module do ktorego importujemy
-  }
-};
-*/ 
 
 },{"regenerator-runtime":"dXNgZ","./config":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l60JC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-var _view = require("./View"); // exportujemy parent klase, jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas
+var _view = require("./View");
 var _viewDefault = parcelHelpers.interopDefault(_view);
-var _iconsSvg = require("url:../../img/icons.svg"); //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
+var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 var _fractional = require("fractional");
 class RecipeView extends (0, _viewDefault.default) {
@@ -2979,32 +2888,24 @@ class RecipeView extends (0, _viewDefault.default) {
         this._parentElement.addEventListener("click", function(e) {
             const btn = e.target.closest(".btn--update-servings");
             if (!btn) return;
-            const updateTo = +btn.dataset.updateTo; //dzieki temu ze dwa rozne dataSety zdefiuniowac dla tych btnow to w zaleznosci ktory kliniemy to pobierze innego dataSeta i poda go do handlera jako argumnet przez co wywolamy go w kontrolerze z tym argumentem i w ten spoosb bedzie wiadomo ile mamy servings. Nie mozmey  tu uzyc desctrutingu bo jest +, mozna trylko czyustą wartosc bez zmieniania jej w tej samej linijce desctructowac
-            // console.log(this._data); tutaj nie jest dostepne bo this w event listernerze to pointuje na obiekt na kotrym wywoalismy event a nie na obiekt stworozny na podsytawie klasy tak jak to jest w klasach. Jak chciualbys zeby tu bylo to dostepne to musialby ten  addHandlerUpdateServings byc arrow funckja bo ona nie ma wlasnego this, i pobiera je z otoczenia. Ale jak tu pobierzesz to bedziesz pozniej musial rozdzielac na obydwa przypadki jak klikniesz jeden vbtn zrob jedno a jak drugi to druigie, lepiej dodac do tych btnow przy rendertowaniu dataSet(zawsze dodawaj dataSet jak chcesz polaczyc DOM z kodem, czyli pobrac jakies informacje ktore sie dzieją w domie dla okreslonych elementow HTML i pozniej cos z nimi zrobic w kodzie)
+            const updateTo = +btn.dataset.updateTo;
             if (updateTo > 0) handler(updateTo);
         });
     }
     addHandlerAddBookmark(handler) {
         this._parentElement.addEventListener("click", function(e) {
-            //tu tez event delegation stosujmey bo to sie stosuje jak mamy kilka sibling elementow ktorym chcemy dac event listenera oraz dla elementow ktore nie sa wygenerowane przy pierwszym zaladowaniu strony, to nie jesy wygenerowane przy pierwszym zaladowaniu wiec musimy stsosowac event delegacje
             const btnEl = e.target.closest(".btn--bookmark");
             if (!btnEl) return;
             handler();
         });
     }
     addHandlerRender(handler) {
-        //tj publisher i musi dostac dostep do subscribera zeby sie mogl wykonac event, ale nie woilno nam imoprtowac niz z kontrolera do view, wiec tworzymy funckje ktora jako argument przyjmie event handlera
         [
             "hashchange",
             "load"
-        ].forEach((ev)=>window.addEventListener(ev, handler)); //w ten sposob mozemy przeloopowac przez evenety do kotrych chcemy podlaczyc ten sam callback
-    //W MVC event powinien byc sluchany w view natomiast kod jaki sie ma wykonac dla tego eventu powinien byc w controlerze. Dlatego nalezy zastosowac PUBLISHER-SUBSCRIBER pattern (pattern do oblusgi eventlistenerow w MVC architekturze).Tworzymy w view metode na naszym obiekcie  ktora bedzie tworzyla eventListenera (musi byc w public API) i jako callback funckje dajemy argument handler. Nastepnie w controlerze tworzymy funkcje init ktora zadziala przy starcie strony i w niej wywolujemy tą metode  addHandlerRender() na tym obieckie zaimportowanym z recipeView dla ktorego stworzylismy tą metode, i podajemy do niej  odpowiedni handler z controlera przez co stworzy sie dzialajacy event listener ktorego logika bedzie w controlorze a sluchanie na event w view
-    //wytlumaczenie eventów:
-    // window.addEventListener('hashchange', handler); jak zaladumemy wyniki wyszukiwania i user kliknie w ktorys przepis zeby sie wyswietlil to wtedy sluchamy na hashchange event czyli na zmaine w url, bo jak klikniemy w jakis przepis to sie zmieni hash w url i ten hash to bedzie taki sam jak id naszego przepisu.
-    // window.addEventListener('load',handler); to dajemy w celu jak wkleimy link z url do przepisu (z hashem odpowiadajacym id) to zeby sie strona odrazu zaladowala z tym przepisem. Bo przy wklejeniu url gotowe nie zadziala hashchange bo nic w url sie nie zmieni, wiec sluchamy na load, az sie strona zaladuje iu wtedy odpalamy funckje controlRecipies
+        ].forEach((ev)=>window.addEventListener(ev, handler));
     }
     _generateMarkup() {
-        //przy tworzeniu nowych elementow trzeba pamietac o tym ze po uzyciu parcela, tworzy sie nowy folder dist i to jest folder ktory bedzie wyswietlany w przegladrce, parcel tam zmienia roniwez nazwy itp przez to jak tworzymy za pomocą kodu nowe elementy na stronie i chcemy wrzucic jakies zdj ktore są w naszym folderze img to nie mozemy uzyc normalnego hrefa do nich bo tegn href nie bedzie znaleziony w folderze dist bo parcel zmienia nazwy, przez to trzeba href ustawic na folder w parcelu odpowiadajacy naszemu folderowi img. Zeby to zrobic najlepiej sobie zaimportowac tutaj ten nasz folder orginalny, bo to co my tu piszemy to sie wykonuje w folderze dist, w ktorym sa inne nazwy i ten normlany href by tam nie odnalazl sie.(importowanie na gorze kodu). W  <div class="recipe__info-buttons"> tworzymy dataSety dla btnow w kotrych zapisujemy liczbe servings-1 i liczbe servings + 1 zeby pozniej ich uzyc zeby polaczyc dom z kodem z kontrolera
         return `
       <figure class="recipe__fig">
       <img src="${this._data.image}" alt="${this._data.title}" class="recipe__img" />
@@ -3059,8 +2960,7 @@ class RecipeView extends (0, _viewDefault.default) {
     <div class="recipe__ingredients">
       <h2 class="heading--2">Recipe ingredients</h2>
       <ul class="recipe__ingredient-list">
-      ${this._data.ingredients.map((ing)=>this._generateMarkupIngredient(ing))// nie moizemy uzywac forEach tu bo nie damy rady dodac tego elementu do czegos co jeszcze nie istenije na stronie. Musimy uzyc czegos co nam zreturnuje za kazdym razem stringa z HTML , wiec wezmiemy zmapujemy te skladniki w taki sposob ze w nowej array zamkna sie elementy htmlowskie opisujace kazdy skladnik, i pozniej łaczymy je za pomoca join("") i wtedy to zadziala tak samo jakbysmy dla kazdego skladnika recznie napisali takiego html template. mozna tez by bylo to zapisac jako .map( this._generateMarkupIngredient) wtedy automayucznie kazdy elementy z mapewnowej array stanie sie arguemntem w kazdej kolejnej iteracji
-        .join("")}
+      ${this._data.ingredients.map((ing)=>this._generateMarkupIngredient(ing)).join("")}
         
       </ul>
     </div>
@@ -3098,42 +2998,38 @@ class RecipeView extends (0, _viewDefault.default) {
           </div>
         </li>`;
     }
-} //wszytskie view najlepiej robic w klasach, bo czesto jest glowna klasa view ktora bedzie inhertiowana przez wsyztsie inne view,oraz beda tez metody i zmienne prywatne dla kazdej z klas, kazdy view jako klasa powinien byc w osobnym pliku.
-exports.default = new RecipeView(); //tworzymy nowy object i na podstawie klasy i ekportujemy go do kontrolera, nie podajemy zadnych danych wiec nawey nie potrzebujemy constructora w klasie. Nidgy nie eksportuj calej klasy tylko obiekt stworzony na podsatwie tej klasy. Robimy jako piublic api te metody kotrych bedziemy chcieli uzyc w controlerze na tym stworzonym obiekcie.
+}
+exports.default = new RecipeView();
 
 },{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","fractional":"3SU56","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"5cUXS":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-var _iconsSvg = require("url:../../img/icons.svg"); //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
+var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class View {
-    // klasa ktora bedzie parent klasa dla pozostalych klas, exportujemy ją do wsyztskich child klas zeby mozna bylo ją extendowac. dajemy tu metody i porpties ktore beda sie powtarzac w wiekszosci view. Jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas
     _data;
     render(data, render = true) {
-        if (!data || Array.isArray(data) && data.length === 0) return this.renderError(); //sprawdzenie czy są dane przy ladowaniu search resultow i przy ladowaniu przepisu, ale to imo srednio tu pasuje
-        this._data = data; //w tej metodzie stowrzymy #data ktore bedzie trzymalo dane o przepisie, i teraz ten przepis bedzie dostyepny pod tą property data wiec mozemy go wykorzystywac w innych metodach np  w #generateMarkup ktora stworzy nam htmla
+        if (!data || Array.isArray(data) && data.length === 0) return this.renderError();
+        this._data = data;
         const markup = this._generateMarkup();
-        if (!render) return markup; //dajemy to po to zeby nasze previewView dzialalo i zeby dzialalo tak jak opsiane w bookmarksView ze wtedy render returnuje htmla a nie renderuje bo akurat tego potrzeba w bookmarksView i w resultsView
+        if (!render) return markup;
         this._clear();
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
     }
     update(data) {
         this._data = data;
-        const newMarkup = this._generateMarkup(); //to jest string w ktorym mamy elementy DOM zapisane ale jako string, wiec nie mozemy tego porownac z DOM elementem ktory juz jest na stronie wiec muismy przekonwerowac ten string na DOM ELEMENT zeby moc porownac z DOM ELEMENTEM ktory jest juz wydrenderowany na stronie
-        const newDOM = document.createRange().createContextualFragment(newMarkup); //w ten sposob konwertujemy stringa z htmla do DOM ELEMENTU w celu np wlasnie porownania dom elemntow itp. Mimo ze nie ma go na naszej stronie wyrednerowanego to jest to DOM element i mozemy go uzywac normalnie tak jak uzywamy DOM elementow ktore sa na naszej stronie. On sie normlanie updejtuje itp mimo ze nie jest wyswiuetalny na stronie, zachowuje sie jak normalny dom element(taki wirtualny DOM)
-        const newElements = Array.from(newDOM.querySelectorAll("*")); //w ten sposob mozemy wybrac wszytskie elementy jakie są w naszym DOM elemencie newDom. "*" wybiera wsyztskie elementy i musimy zastosowac querySelectorAll i wynikiem tego bedzie nodeList(Node list nalezy konwertowac do prawidzwej array za pomoca Array.from) ze wszytskimi elementami ktore znajdują sie w srodku tego DOM elemnetu newDOM. i kazdu z tych elementow w tablicy ma proprties duzo i jedna z nich jest textContent/innerHTML i stamtad mozemy wyciganac z jakim tekstem by sie wyrenderowal ten element (a u nas sie ten textContent/innerHTML z kazdym klinieciem updejtuje wiec z kazdym kliknieciem ten element odnosnie liczby servings bedzie sie updejtowal)
+        const newMarkup = this._generateMarkup();
+        const newDOM = document.createRange().createContextualFragment(newMarkup);
+        const newElements = Array.from(newDOM.querySelectorAll("*"));
         const curElements = Array.from(this._parentElement.querySelectorAll("*"));
-        //zeby porownac ten wirtualny nowy DOM z DOMEM na stronie to trzeba tutaj wybrac te elementy DOMU na stronie ktore odpowiadają elementom zamknietym w newDOM
         newElements.forEach((newEl, i)=>{
-            const curElement = curElements[i]; // w ten sposob bedziemy loopowac przed curElements tez, przez te dwie array jednoczesnie w celu porownania ich
+            const curElement = curElements[i];
             //updates changed text
-            if (!newEl.isEqualNode(curElement) && newEl.firstChild?.nodeValue.trim() !== "") curElement.textContent = newEl.textContent; //jak nie są taki same text conetenty w w starym i nowym elemencie DOM to w  starym wygenrowany na stronie DOM  zmioeniamy jego textContent na textContent nowego elementu DOM i ten stary sie zamieni na nowy na stronie. Przez to ze to tez zwroci false dla rodzicow elementow w ktorych sie zmienilo cos to musimy jeszcze zrobic tak zeby to dzialalo tylko dla elementow w ktorych jest sam tekst przez co nie bedzie wybierac elemenmtow rodzicow dlatego wszytskie elementy ktore są w arrays(w naszych arrays mamy nie elementy tylko nodes, bo nie kazdy node to element ale kazdy element to node,bo mamy rozne typu nodes, oprocz elementow jest jeszcze text node,comment noder, atrinbute node itp) nalezy na nich uzyc firstChild i firstChild uzyte na node zworci node ktore jest pierwszym dzieckiem tego parent node. Wiec sprawdzamy czy  firstChild to bedzie text node za pomocą nodeValue (jak node jest inny niz text node to zwraca null a jak jest text node to zwraca text) i jeszce uzywamy trim() zebhy uciac whitespaces i przyrownujemy to zeby nie bylo pustym stringiem. to sprawdzenie przejda elementy co maja w sobie tylko text czyli no <btn clas'gowno>esssa</btn> itp
-            // nowyElemnt,isEqualNode(StaryElement) sprawdza czy 2 elementy DOM są takie same, zwraca false jak nie sa i zwraca true jak sa. Jak porownujemy tak jak tutaj to nie dosc ze zwroci false w elementach w tkorych cos sie zmienilo to rowniez zwroci false w rodziach tych elementow no bo ich dziecko w srodku sie zmienilo.
+            if (!newEl.isEqualNode(curElement) && newEl.firstChild?.nodeValue.trim() !== "") curElement.textContent = newEl.textContent;
             //updates changed atributes
             if (!newEl.isEqualNode(curElement)) {
-                // teraz musimy jeszcze zupdejtowac dataSety na batonach - i + bo one maja poczatkowo dataSet ustawiony na servings-1 i servings-1 i z kazdym kliknieciem trzeba zmienic im ten dataSet, nie mozemyu zrobic tego w tym samym ifie co u gory bo tam wchodza tylko nodes co maja w sobie tyko text a nasze btny maja w sobie svg wiec nigdy nie wejda do tego ifa gornego wiec musimy zrobic osobne sprawdzenie dla nich w ktorym sprawdzamy jedynie czy elementy sie roznia miedzy soba
-                newEl.attributes; // .atribbutes dla kazdego elementu ktory zworci nam object z jego atrybutami a wiec  dzieki temu ze w tym ifie wykona sie to tylko dla elementow w kotrych cos sie zmienilo to bedziemy mogli wziac ich atrybuty w objecie zmienic na array przeloopowac i  wlozyc do starego htmla przez co sie zupdejtują i bedą dzialac btny(taka sam konwencja jak dla textu)
-                Array.from(newEl.attributes).forEach((attr)=>curElement.setAttribute(attr.name, attr.value)); //bierzemy object z  atrybutami nowegoElementu kotry jest inny niz odpowiadajacym mu staryElement zmieniamy go na array i dal kazdego z tych atrybutow ustwiamy go jako atrybut starego elementu ktory  odpowiada temu nowemuElemetowi i znajduje sie juz na streonie. uzywamy setAtribute(nazwa atrybutu, wartosc atrybutu)
+                newEl.attributes;
+                Array.from(newEl.attributes).forEach((attr)=>curElement.setAttribute(attr.name, attr.value));
             }
         });
     }
@@ -3151,7 +3047,6 @@ class View {
         this._clear();
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
     }
-    //renderowanie bledow zawsze musi sie dziac na ekranie UI zeby widzial je uzytkowanik wiec wysiwtelanie i generowanie bledu powinno byc w view zawsze. teraz tą metode sie wezmie i jako ze jest public API to uzyje sie ją w controloerze do handlowania bledów
     renderError(message = this._errorMessage) {
         const markup = `
     <div class="error">
@@ -3167,7 +3062,6 @@ class View {
         this._parentElement.insertAdjacentHTML("afterbegin", markup);
     }
     renderMessage(msg = this._message) {
-        //renderuje wiadomosc pozytywna
         const markup = `
     <div class="message">
       <div>
@@ -3481,7 +3375,7 @@ parcelHelpers.defineInteropFlag(exports);
 class SearchView {
     _parentEl = document.querySelector(".search");
     getQuery() {
-        const query = this._parentEl.querySelector(".search__field").value; // returnuje wpisane query
+        const query = this._parentEl.querySelector(".search__field").value;
         this._clearInput();
         return query;
     }
@@ -3492,7 +3386,7 @@ class SearchView {
         this._parentEl.addEventListener("submit", function(e) {
             e.preventDefault();
             handler();
-        }); //parent element to form, wiec dajemy na nim event submit czyli siue wykona jak sie kliknie przycisk tego forma lub kliknie sie enter przy wpisywaniu w input
+        });
     }
 }
 exports.default = new SearchView();
@@ -3500,19 +3394,18 @@ exports.default = new SearchView();
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"cSbZE":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-var _view = require("./View"); // exportujemy parent klase,jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas jka np wysiwtelanie spinnera itp
+var _view = require("./View");
 var _viewDefault = parcelHelpers.interopDefault(_view);
-var _previewView = require("./previewView"); //to nie jest klasa tylko instancja, bedziemy tutaj tego uzywac bo kod sie powtarza dla dwoch view taki sam i zrobilismy taka child klase previreewView ktora rendeeruje element i teraz bedziemy uzywac jej public api do tego
+var _previewView = require("./previewView");
 var _previewViewDefault = parcelHelpers.interopDefault(_previewView);
-var _iconsSvg = require("url:../../img/icons.svg"); //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
+var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class resulsView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".results");
     _errorMessage = "No recipes found for your query! Please try again!";
     _message = "";
     _generateMarkup() {
-        //to tradycyjnie sie odpali jak render zadziala(nie ten render w srodku funckji! tylko booksmarkView.render(jakies dane))
-        return this._data.map((result)=>(0, _previewViewDefault.default).render(result, false)).join(""); ///dla kazego bookmarka odpalamy funkje render, w render jest ustawiany _data wiec mozemy tego uzyc teraz w previewView w celu tworzenia htmla. Dodajemy drugi argument do rendera bo tutaj w generate markup my mui8usmy zwrocic stringa z markupem, dlatego w renderze dajemy drugi argumenr render i jak ustawimy go na false to wtedy render nie wydernerduje tylko zreturnuje htmla w stringu wiec to co chcemy
+        return this._data.map((result)=>(0, _previewViewDefault.default).render(result, false)).join("");
     }
 }
 exports.default = new resulsView();
@@ -3527,7 +3420,7 @@ var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class previewView extends (0, _viewDefault.default) {
     _parentElement = "";
     _generateMarkup() {
-        const id = window.location.hash.slice(1); //id z window pobieramy
+        const id = window.location.hash.slice(1);
         return `
     <li class="preview">
         <a class="preview__link ${id === this._data.id ? "preview__link--active" : ""}" href="#${this._data.id}">
@@ -3549,16 +3442,16 @@ class previewView extends (0, _viewDefault.default) {
 `;
     }
 }
-exports.default = new previewView(); //ten view jest wspolny dla resultsView i bookmarksView, bedzie on tylko generowal element o klasie 'preview' bo takiego elementu uzywamy w obydwu tych wyzej wymienonych view
+exports.default = new previewView();
 
 },{"./View":"5cUXS","url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"4Lqzq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-var _view = require("./View"); // exportujemy parent klase,jak cchcemy extendopwac klasy to nie mozemy uzywac #properties tylko _properties bo tamte jeszcze nie dzialaja w parcelu przy extnedowaniu klas jka np wysiwtelanie spinnera itp
+var _view = require("./View");
 var _viewDefault = parcelHelpers.interopDefault(_view);
-var _previewView = require("./previewView"); //to nie jest klasa tylko instancja, bedziemy tutaj tego uzywac bo kod sie powtarza dla dwoch view taki sam i zrobilismy taka child klase previreewView ktora rendeeruje element i teraz bedziemy uzywac jej public api do tego
+var _previewView = require("./previewView");
 var _previewViewDefault = parcelHelpers.interopDefault(_previewView);
-var _iconsSvg = require("url:../../img/icons.svg"); //zawsze path musi byc od folderu do ktorego importujemy, wiec jestesmy w controler pliku (czyli w folderze js) to musimy isc o jedne folder wyzej(do folderu src) i dopiero wejsc do img i pozniej podac plik ktory ma byc importowany. I teraz pod zmienna icons bedzie kryl sie path do odpowiadajacego pliku w dist. I teraz uzyjemy ${icons} w czesci hrefa + nazwa icony. Jak importuemy cos co nie jest kodem, czyli jakies plik ze zdj,plik z video,dzwiekiem,plik z ikonami itp to musimy dodac w path na poczatku 'url:path'. importujemy zawsze plik nigdy folder
+var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class bookmarksView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".bookmarks__list");
@@ -3568,8 +3461,7 @@ class bookmarksView extends (0, _viewDefault.default) {
         window.addEventListener("load", handler);
     }
     _generateMarkup() {
-        //to tradycyjnie sie odpali jak render zadziala(nie ten render w srodku funckji! tylko booksmarkView.render(jakies dane))
-        return this._data.map((bookmark)=>(0, _previewViewDefault.default).render(bookmark, false)).join(""); ///dla kazego bookmarka odpalamy funkje render, w render jest ustawiany _data wiec mozemy tego uzyc teraz w previewView w celu tworzenia htmla. Dodajemy drugi argument do rendera bo tutaj w generate markup my mui8usmy zwrocic stringa z markupem, dlatego w renderze dajemy drugi argumenr render i jak ustawimy go na false to wtedy render nie wydernerduje tylko zreturnuje htmla w stringu wiec to co chcemy
+        return this._data.map((bookmark)=>(0, _previewViewDefault.default).render(bookmark, false)).join("");
     }
 }
 exports.default = new bookmarksView();
@@ -3586,10 +3478,10 @@ class PaginationView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector(".pagination");
     addHandlerClick(handler) {
         this._parentElement.addEventListener("click", function(e) {
-            const btnEl = e.target.closest(".btn--inline "); //stosujemy tu event delegation. Jakby byl sam btn to spoko nie trzeba closest uzywac wystaczy samo e.target ale jako ze sa rzeczy w btnie to musimy miec pewnosc ze jak klikniemy w dziecko  .btn--inline  to nam sie wybierze i tak btn wiec dlatego srosujemy closest
-            if (!btnEl) return; //sprawdzenie bo mozemy w naszym el,meencie rodzicu kliknac na cos co nie ma przodka o klasie btn--inline i wtedy btnEl jest null wiec to zabezpieczenie zeby nie wyhjebalo funckji oprzy odczytuwaniu dataset
+            const btnEl = e.target.closest(".btn--inline ");
+            if (!btnEl) return;
             const goToPage = +btnEl.dataset.goto;
-            handler(goToPage); //jak mamy jakies rzeczy zwiazne z eventem a wiec e.target e.preventDefault()  to musimy tutaj zrobic callbacka ktory obsluguje tylko rzeczy zwiazane z eventem (Jak musimy podac jakis element htmla jako argument handlera czy jakas wartosc z domu jako argument handlera to tez tak trzeba zrobic) i na koniec wywolac handler. cala logika handlera nie dotyczaca domu i eventow ma byc w kontrolerze. reszta tutaj. Dlatego numer strony pozskakny z dataSet z DOMU podajemy jako aergument handlera zeby mocv go uzyc w kontrolerze
+            handler(goToPage);
         });
     }
     _gereneteMarkupBtnNextPage(currentPage) {
@@ -3601,7 +3493,6 @@ class PaginationView extends (0, _viewDefault.default) {
             </svg>
         </button>
     `;
-    //tworzymy  data-goto="${currentPage + 1}" zeby js wiedzial do kotrej strony ma przejsc po kliknieciu, zczyta se ten data atrybut z htmla
     }
     _gereneteMarkupBtnPreviousPage(currentPage) {
         return `
@@ -3614,52 +3505,18 @@ class PaginationView extends (0, _viewDefault.default) {
       `;
     }
     _generateMarkup() {
-        //podailismy do render() dla tego view model.search.results w kotrym sa dane na temat na kotrej jestesmy stronie, ilosc wynuikow do wygenerowania itp, te dane zapisują się w zmiennej _data ktora jako pusta zmienna inhertiowana jest do kazdego view i render dla kazdegom view inne dane w niej zapisuje. Funckja ta bedzie renderowac buttno w zaleznosci od astrony na kotrej jestesmy
-        const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage); //obliczamy ile jest stron, tu wychodzi 5.9 wiec zawsze do gory sie zaokorgla zeby wszytskie wyniki sie zmiescily (dzielimy dlugoisc array z resultami) przez ilosc resultow jakie maja byc na stronie wtedy wiemy ile jest stron, to wsyztsko przyszlo jako argument z render() wywoalnym w kontrolerze i zapisane zostalo w _data. Wartosci te sa zdefiniowane w modelu
+        const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage);
         const currentPage = this._data.page;
         // Page 1, there are other pages
         if (currentPage === 1 && numPages > 1) return this._gereneteMarkupBtnNextPage(currentPage);
-        //sprawdzmy czy jestemy na pierwszej stronie i czy jest wiecej stron niz 1
-        //   return `
-        //     <button class="btn--inline pagination__btn--next">
-        //         <span>Page ${currentPage + 1}</span>
-        //         <svg class="search__icon">
-        //             <use href="${icons}#icon-arrow-right"></use>
-        //         </svg>
-        //     </button>
-        // `;
         // Last page
         if (numPages === currentPage && currentPage > 1) return this._gereneteMarkupBtnPreviousPage(currentPage);
-        //sprawdzmy czy ostatnia strona ma taka sama wartosc jak strona akutalna i nie jest pierwszą(bo jakby byla jedna strona to wtedy to tez by byla prawda a musimy rozdzielic te przypadki), jesli tak to jestyesmy na ostatniej stronie
-        //   return `
-        //     <button class="btn--inline pagination__btn--prev">
-        //         <svg class="search__icon">
-        //             <use href="${icons}#icon-arrow-left"></use>
-        //         </svg>
-        //         <span>Page ${currentPage - 1}</span>
-        //     </button>
-        //   `;
         //Other page
         if (numPages > currentPage && currentPage > 1) return `
     ${this._gereneteMarkupBtnPreviousPage(currentPage)}  ${this._gereneteMarkupBtnNextPage(currentPage)}
   `;
-        //   return `
-        //         <button class="btn--inline pagination__btn--prev">
-        //             <svg class="search__icon">
-        //                 <use href="${icons}#icon-arrow-left"></use>
-        //             </svg>
-        //             <span>Page ${currentPage - 1}</span>
-        //         </button>
-        //         <button class="btn--inline pagination__btn--next">
-        //             <span>Page ${currentPage + 1}</span>
-        //             <svg class="search__icon">
-        //                 <use href="${icons}#icon-arrow-right"></use>
-        //             </svg>
-        //         </button>
-        //       `;
-        //sprawdzamy czy jestesmy na stronie innej niz ostatnia i pierwsza. Sprawqdzmy czy numer stron jest wiekszy niz akutralna strona i czy akutalna strona jest wieksza niz 1
         // Page 1, no other pages
-        return ""; //jak wszytskie pozostale warunki nie sa spelnione to znaczy ze jest tylko jedna strona. Returnujemy nic bo nie chcemy zadnego btna w takiej sytuacji renderowac
+        return "";
     }
 }
 exports.default = new PaginationView();
@@ -3679,12 +3536,12 @@ class addRecipeView extends (0, _viewDefault.default) {
     _btnOpen = document.querySelector(".nav__btn--add-recipe");
     _btnClose = document.querySelector(".btn--close-modal");
     constructor(){
-        super(); //nawet jak zadnej property nie chcemy odziedzyczc w klasie dziecku zbey byla odrazu stworzona na jej instacjach( bo i tak mozemy z nich korzytsac bo beda w prototypie) to i tak musimy napisac super() i zostawic puste chyba ze nie ma wgl contrutora. Tu bedzie bo addHandlerShowWindow robi rzeczy tylko zwiazane z domem, wiec nie trzeba go podawac do controlera i wystraczy go wywolwac w consturtorze zeby przy zaladowaniu strony juz odpalil i zeby sie ten addEventListener dodal do btnOpen i czekal na event, jedyne co trzeba zrobic z controlerem to imoprotowac do niego instancje tej klasy
+        super();
         this._addHandlerShowWindow();
         this._addHandlerHideWindow();
     }
     _toggleWindow() {
-        this._window.classList.toggle("hidden"); //dzieki temu toggle a nie remove i add w obydwu funckjach tych pod spodem mozemy uzyc tej funckji
+        this._window.classList.toggle("hidden");
         this._overlay.classList.toggle("hidden");
     }
     closeWindow() {
@@ -3694,7 +3551,7 @@ class addRecipeView extends (0, _viewDefault.default) {
         ].forEach((el)=>el.classList.add("hidden"));
     }
     _addHandlerShowWindow() {
-        this._btnOpen.addEventListener("click", this._toggleWindow.bind(this)); //bindujemy this zeby pokazywalo this na klase a nie na element na kotrym wywolaimsy eventListener
+        this._btnOpen.addEventListener("click", this._toggleWindow.bind(this));
     }
     _addHandlerHideWindow() {
         [
@@ -3702,7 +3559,6 @@ class addRecipeView extends (0, _viewDefault.default) {
             this._overlay
         ].forEach((ev)=>ev.addEventListener("click", this._toggleWindow.bind(this)));
         document.body.addEventListener("keydown", (e)=>{
-            //arow funckja zeby, bo arrow funkjce nie maja swojego this tylko wezma this z najblizszego przodka ktore jest okreslone wiec tu wezmie this z klasy i zadziala tak jak trzeba
             if (e.key === "Escape") this._toggleWindow();
         });
     }
@@ -3711,9 +3567,9 @@ class addRecipeView extends (0, _viewDefault.default) {
             e.preventDefault();
             const dataArray = [
                 ...new FormData(this)
-            ]; //new FormData to API ktory wyciaga wszytskie dane z inputow z forma i zamyka w dziwnym obiekcie  ktorego nie da sie uzyc dlatego musimy te dane zamknac w nowej array uzywajac spread operatora ta array co powsytanie to bedzie array w ktorej na kazdym miejscu bedzie array z 2 wartosciami, pierwszą bedzie name jaki byl przypisany do inputu a drugi to value wpisana do inputu. Piszemy new FormData(element DOM ktory jest formem) tutaj napisalismy this bo wywolujmey na tym formie eventListenera wiec this w eventListenrze to element na kotrym wywolalismy eventListenera wiec w tym przypadku nasz form
-            const data = Object.fromEntries(dataArray); //jako ze dataArray dala nam tablice z entries a nasze przepisy byly zamkniete jako object to uzywamy Object.fromEntries(tablica z entries) i stworzy nowy obiekt na podstawie tej tablicy z entries ktora podalismy, jhest to ptzeciwiesntwo metody Object.entries(nazwa obiektu) ktory zmienial obiekt na tablice z entries
-            handler(data); //podajermy te dane z forma do kontrolera w postaci argumentu
+            ];
+            const data = Object.fromEntries(dataArray);
+            handler(data);
         });
     }
 }
